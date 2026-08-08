@@ -8,7 +8,19 @@
 
 ## Start reaching out to influencers 
 
+## Verify IAP works
 
+In Google Play Console:
+
+Testing → Internal testing → Testers tab
+Create an email list with just your email
+Save and turn on the "Internal testing" switch
+What happens:
+
+You get an email with a Play Store link to download
+The app installs like a normal Play Store app but it's only visible to testers
+IAP testing works (add yourself as a license tester too)
+Builds are live within minutes — no Google review
 
 ## perhaps just take a day to create dancing cat/ animal videos....
 

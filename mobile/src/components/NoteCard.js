@@ -1,14 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { useAppTheme } from '../theme/appTheme.js';
-import { stripNoteContentToPlainText } from '../utils/noteContent.js';
+import { View, StyleSheet, Text } from 'react-native';
 
 /**
  * NoteCard component
  * Displays a note preview
  */
-const NoteCard = ({ note, onPress, onLongPress, noteTextScale = 1, isSelected = false, selectionMode = false }) => {
-  const { colors } = useAppTheme();
+const NoteCard = ({ note }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -17,31 +14,17 @@ const NoteCard = ({ note, onPress, onLongPress, noteTextScale = 1, isSelected = 
     });
   };
 
-  const previewText = stripNoteContentToPlainText(note.content || '');
-
   return (
-    <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          backgroundColor: isSelected ? colors.chipSelectedBg : colors.surface,
-          borderColor: isSelected ? colors.accent : colors.border
-        }
-      ]}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      delayLongPress={220}
-      activeOpacity={0.85}
-    >
+    <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, { color: colors.text, fontSize: 14 * noteTextScale }]}>{note.title}</Text>
-        <Text style={[styles.cardDate, { color: colors.mutedText, fontSize: 11.5 * noteTextScale }]}>{formatDate(note.updatedAt || note.createdAt)}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{note.title}</Text>
+        <Text style={styles.cardDate}>{formatDate(note.createdAt)}</Text>
       </View>
-
-      <Text style={[styles.cardContent, { color: colors.mutedText, fontSize: 13 * noteTextScale, lineHeight: 18 * noteTextScale }]} numberOfLines={2}>
-        {previewText}
+      
+      <Text style={styles.cardContent} numberOfLines={2}>
+        {note.content}
       </Text>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -49,33 +32,27 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: '#dee2e6'
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107'
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 6
+    alignItems: 'center',
+    marginBottom: 8
   },
   cardTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#212529',
-    flex: 1,
-    flexWrap: 'wrap',
-    lineHeight: 19,
-    paddingRight: 8
+    flex: 1
   },
   cardDate: {
     fontSize: 12,
     color: '#6c757d',
-    marginLeft: 6,
-    marginTop: 1,
-    flexShrink: 0
+    marginLeft: 8
   },
   cardContent: {
     fontSize: 13,

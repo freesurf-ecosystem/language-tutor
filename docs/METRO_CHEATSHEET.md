@@ -4,6 +4,8 @@
 ```powershell
 cd C:\Code\emmaline
 npm run dev:mobile
+or
+npx expo start
 ```
 
 On phone: 

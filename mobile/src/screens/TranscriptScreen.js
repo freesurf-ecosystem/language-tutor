@@ -1,96 +1,39 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
-  Alert,
   View,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  SectionList
+  SectionList,
+  Image
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { deleteCall, getCalls } from '../services/api.js';
-import { useAppTheme } from '../theme/appTheme.js';
-import { designTokens } from '../theme/designSystem.js';
 
 /**
  * TranscriptScreen
  * View all call transcripts organized chronologically
  */
-const BOTTOM_SAFE_ZONE = 44;
-
-const getTranscriptModeLabel = (callRecord) => {
-  const rawMode = callRecord?.callMode || callRecord?.callType || callRecord?.transcriptType || callRecord?.mode || callRecord?.sourceType || '';
-
-  if (typeof rawMode === 'string' && /listen/i.test(rawMode)) {
-    return 'Listen Mode';
-  }
-
-  return 'Live Call';
-};
-
-const TranscriptScreen = ({ navigation, onAppHeaderScroll, embedded = false }) => {
-  const { colors } = useAppTheme();
-  const insets = useSafeAreaInsets();
+const TranscriptScreen = ({ navigation }) => {
   const [transcripts, setTranscripts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedTranscriptIds, setSelectedTranscriptIds] = useState([]);
 
-  const loadTranscripts = useCallback(async (options = {}) => {
-    if (!options.silent) {
-      setLoading(true);
-    }
+  React.useEffect(() => {
+    loadTranscripts();
+  }, []);
 
+  const loadTranscripts = async () => {
+    setLoading(true);
     try {
-      const response = await getCalls();
-
-      if (!response.success) {
-        throw new Error(response.error || 'Unable to load transcripts');
-      }
-
-      setTranscripts(response.calls || []);
+      // TODO: Fetch transcripts from backend API
+      // GET /api/calls?sort=date_desc
+      // const response = await fetch('${BACKEND_URL}/api/calls');
+      // const data = await response.json();
     } catch (error) {
       console.error('Error loading transcripts:', error);
     } finally {
-      if (!options.silent) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    loadTranscripts();
-  }, [loadTranscripts]);
-
-  useEffect(() => {
-    const unsubscribeFocus = navigation.addListener('focus', () => {
-      loadTranscripts({ silent: true });
-    });
-
-    const pollId = setInterval(() => {
-      loadTranscripts({ silent: true });
-    }, 4000);
-
-    return () => {
-      clearInterval(pollId);
-      unsubscribeFocus();
-    };
-  }, [loadTranscripts, navigation]);
-
-  useEffect(() => {
-    return () => {
-      onAppHeaderScroll?.(0);
-    };
-  }, [onAppHeaderScroll]);
-
-  useEffect(() => {
-    setSelectedTranscriptIds((currentSelection) => currentSelection.filter((callId) => transcripts.some((transcript) => transcript.id === callId)));
-  }, [transcripts]);
-
-  const handleListScroll = (event) => {
-    const nextOffsetY = Math.max(0, event.nativeEvent.contentOffset.y || 0);
-    onAppHeaderScroll?.(nextOffsetY);
   };
 
   const formatDate = (dateString) => {
@@ -128,120 +71,44 @@ const TranscriptScreen = ({ navigation, onAppHeaderScroll, embedded = false }) =
     return groups;
   }, []);
 
-  const handleSelectTranscript = (callId) => {
-    setSelectedTranscriptIds((currentSelection) => {
-      if (currentSelection.includes(callId)) {
-        return currentSelection.filter((currentCallId) => currentCallId !== callId);
-      }
-
-      return [...currentSelection, callId];
-    });
-  };
-
-  const handleTranscriptPress = (transcript) => {
-    if (selectedTranscriptIds.length > 0) {
-      handleSelectTranscript(transcript.id);
-      return;
-    }
-
-    navigation.navigate('CallDetail', { callId: transcript.id });
-  };
-
-  const handleDeleteSelectedTranscripts = () => {
-    if (selectedTranscriptIds.length === 0) {
-      return;
-    }
-
-    Alert.alert(
-      'Delete transcripts',
-      `Delete ${selectedTranscriptIds.length} selected ${selectedTranscriptIds.length === 1 ? 'transcript' : 'transcripts'}?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const deletionResults = await Promise.all(selectedTranscriptIds.map((callId) => deleteCall(callId)));
-            const hasFailure = deletionResults.some((result) => !result.success);
-
-            if (hasFailure) {
-              Alert.alert('Delete failed', 'One or more selected transcripts could not be deleted.');
-            }
-
-            setSelectedTranscriptIds([]);
-            loadTranscripts({ silent: true });
-          }
-        }
-      ]
-    );
-  };
-
   const renderTranscript = ({ item }) => (
     <TouchableOpacity
-      style={[
-        styles.transcriptCard,
-        {
-          backgroundColor: selectedTranscriptIds.includes(item.id) ? colors.chipSelectedBg : colors.surface,
-          borderColor: selectedTranscriptIds.includes(item.id) ? colors.accent : colors.border
-        }
-      ]}
-      onPress={() => handleTranscriptPress(item)}
-      onLongPress={() => handleSelectTranscript(item.id)}
-      delayLongPress={220}
+      style={styles.transcriptCard}
+      onPress={() => navigation.navigate('CallDetail', { callId: item.id })}
     >
       <View style={styles.transcriptHeader}>
-        <View style={styles.transcriptMetaColumn}>
-          <Text style={[styles.time, { color: colors.text }]}>
-            {new Date(item.startedAt).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </Text>
-          <Text style={[styles.modeLabel, { color: colors.mutedText }]}>{getTranscriptModeLabel(item)}</Text>
-        </View>
-        <Text style={[styles.duration, { color: colors.mutedText }]}>{item.callDurationSeconds}s</Text>
+        <Text style={styles.time}>
+          {new Date(item.startedAt).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </Text>
+        <Text style={styles.duration}>{item.callDurationSeconds}s</Text>
       </View>
-      <Text style={[styles.preview, { color: colors.mutedText }]} numberOfLines={2}>
+      <Text style={styles.preview} numberOfLines={2}>
         {item.summary || item.fullTranscript?.substring(0, 100) || 'No transcript'}
       </Text>
     </TouchableOpacity>
   );
 
   const renderSectionHeader = ({ section: { title } }) => (
-    <View style={[styles.sectionHeader, { backgroundColor: 'transparent' }]}>
-      <Text style={[styles.sectionTitle, { color: colors.mutedText }]}>{title}</Text>
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
 
-  const renderListHeader = () => {
-    if (embedded) return null;
-    return (
-      <View style={[styles.headerBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Transcripts</Text>
-        <View style={styles.headerActions}>
-          {selectedTranscriptIds.length > 0 ? (
-            <TouchableOpacity style={styles.iconButton} onPress={handleDeleteSelectedTranscripts}>
-              <Feather name="trash-2" size={20} color={colors.text} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      </View>
-    );
-  };
-
-  const bottomContentInset = Math.max(insets.bottom, BOTTOM_SAFE_ZONE);
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }] }>
+    <View style={styles.container}>
+      <View style={styles.headerBar}>
+        <Text style={styles.pageTitle}>Transcripts</Text>
+      </View>
+
       {loading ? (
-        <ActivityIndicator size="large" color={colors.accent} style={styles.loader} />
+        <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
       ) : transcripts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyText, { color: colors.text }]}>No transcripts yet</Text>
-          <Text style={[styles.emptySubtext, { color: colors.mutedText }]}>
+          <Text style={styles.emptyText}>No transcripts yet</Text>
+          <Text style={styles.emptySubtext}>
             Make a call to see your conversation history
           </Text>
         </View>
@@ -251,10 +118,7 @@ const TranscriptScreen = ({ navigation, onAppHeaderScroll, embedded = false }) =
           keyExtractor={(item, index) => item.id || index.toString()}
           renderItem={renderTranscript}
           renderSectionHeader={renderSectionHeader}
-          ListHeaderComponent={renderListHeader}
-          contentContainerStyle={[styles.listContent, { paddingBottom: bottomContentInset + 24 }]}
-          onScroll={handleListScroll}
-          scrollEventThrottle={16}
+          contentContainerStyle={styles.listContent}
         />
       )}
     </View>
@@ -268,26 +132,14 @@ const styles = StyleSheet.create({
   },
   headerBar: {
     backgroundColor: '#fff',
-    paddingHorizontal: designTokens.chrome.listHeaderHorizontalPadding,
-    paddingTop: designTokens.chrome.listHeaderVerticalPadding,
-    paddingBottom: designTokens.chrome.listHeaderVerticalPadding,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef'
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: designTokens.spacing.sm
-  },
-  iconButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 6
-  },
   pageTitle: {
-    fontSize: designTokens.typography.pageTitle,
+    fontSize: 28,
     fontWeight: '700',
     color: '#212529'
   },
@@ -295,28 +147,26 @@ const styles = StyleSheet.create({
     marginTop: 50
   },
   listContent: {
-    paddingTop: 0,
-    paddingBottom: 0
+    padding: 12
   },
   sectionHeader: {
-    paddingHorizontal: designTokens.spacing.md,
-    paddingVertical: designTokens.spacing.sm,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
     backgroundColor: '#f8f9fa'
   },
   sectionTitle: {
-    fontSize: designTokens.typography.sectionLabel,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6c757d',
     textTransform: 'uppercase'
   },
   transcriptCard: {
     backgroundColor: '#fff',
-    borderRadius: designTokens.radius.sm,
-    padding: designTokens.spacing.md,
-    marginHorizontal: designTokens.spacing.md,
-    marginBottom: designTokens.spacing.sm,
-    borderWidth: 1,
-    borderColor: '#dee2e6'
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF'
   },
   transcriptHeader: {
     flexDirection: 'row',
@@ -324,28 +174,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8
   },
-  transcriptMetaColumn: {
-    flexShrink: 1,
-    gap: 2
-  },
   time: {
     fontSize: 14,
     fontWeight: '600',
     color: '#212529'
-  },
-  modeLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#6c757d',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4
   },
   duration: {
     fontSize: 12,
     color: '#6c757d'
   },
   preview: {
-    fontSize: designTokens.typography.bodySmall,
+    fontSize: 13,
     color: '#495057',
     lineHeight: 18
   },
@@ -353,16 +192,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: designTokens.spacing.xxxl
+    paddingHorizontal: 32
   },
   emptyText: {
-    fontSize: designTokens.typography.title,
+    fontSize: 18,
     fontWeight: '600',
     color: '#212529',
-    marginBottom: designTokens.spacing.sm
+    marginBottom: 8
   },
   emptySubtext: {
-    fontSize: designTokens.typography.body,
+    fontSize: 14,
     color: '#6c757d',
     textAlign: 'center'
   }

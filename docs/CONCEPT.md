@@ -2,13 +2,15 @@
 
 ## Overview
 
-App Name: oov -> Reader Transcriber Tutor -> AI Voice Assistant -> Your AI Assistant -> Multitask with AI -> Your AI Workspace
+App Name: oov -> Reader Transcriber Tutor -> AI Voice Assistant -> AI Virtual Assistant -> Multitask with AI -> Your AI Workspace
 
 oov can transcribe, take notes, read document, teach you a language
 
-Emphasizing / focusing on open source LLM provider capabilities
+privacy oriented workspace
 
-oov is a hands-free, voice-first AI assistant for real-time conversations, instant answers, note taking, transcriptions, reading documents out loud with more features to come. a kind of accessible business assistant layer; 
+Emphasizing / focusing on open source LLM provider capabilities / perhaps removing api providers focusing on self-hosted models [rather than 'AI processing']
+
+oov is a voice-first AI assistant for real-time conversations, note taking, transcriptions, natural reading and tutoring. eventually a kind of accessible business assistant layer with a notepad
 
 
 ### Features [with potential extensions]
@@ -24,10 +26,10 @@ oov is a hands-free, voice-first AI assistant for real-time conversations, insta
 - study skills: flash card creator, quizzes (ex. coconote / turbo ai) production capabilities with take a source material (say a video but perhaps could be several types), creating a "transcript, summary, flashcards, quizzes" [yuma on medium]
 - interlaying skills: start doing more than reading documents or providing transcripts, but can also parse it into different things like flashcards, quizzes, an audio file to listen to, translation, summaries; have the AI assistant 'teach' the person from those materials
 - language or general tutor; ex. Elsa Speak, Speak
+- real time interpretation
 - perhaps extensions with openclaw: - background coding agent: speak to AI as it codes in a sandbox
 ### Sub apps:
 - real time interpretor: can be with text-based or speaker/ headphones; document translation; could still develop the skill but also direct to another app for ASO
-- AI receptionist
 - Free 2nd number / w/ AI intake - probably a separate app...; like AI receptionist phone; receptionist set up (ie an AI voice assistant for small businesses - but how would we set up infrastructure for this if people are also texting... could receive messages like 2nd number) - most likely a quo alternative;
 ### Workspace later
 - perhaps could be a 'workspace' infused with AI skills, 
@@ -45,7 +47,7 @@ oov is a hands-free, voice-first AI assistant for real-time conversations, insta
 
 1. [Phase 1: Publishable MVP with Cloud Infrastructure](#phase-1-publishable-mvp)
 2. [Phase 2: OpenClaw Integration + Enhanced Privacy](#phase-2-openclaw-integration--enhanced-privacy)
-3. [Phase 3: Completely Local & Private](#phase-3-completely-local--private)
+
 
 
 ---

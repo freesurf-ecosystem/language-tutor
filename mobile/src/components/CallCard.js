@@ -1,13 +1,11 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import { useAppTheme } from '../theme/appTheme.js';
 
 /**
  * CallCard component
  * Displays a summary of a single call in the timeline
  */
 const CallCard = ({ call }) => {
-  const { colors } = useAppTheme();
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -19,13 +17,13 @@ const CallCard = ({ call }) => {
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }] }>
+    <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardDate, { color: colors.text }]}>{formatDate(call.startedAt)}</Text>
-        <Text style={[styles.cardDuration, { color: colors.mutedText }]}>{call.callDurationSeconds}s</Text>
+        <Text style={styles.cardDate}>{formatDate(call.startedAt)}</Text>
+        <Text style={styles.cardDuration}>{call.callDurationSeconds}s</Text>
       </View>
       
-      <Text style={[styles.cardSummary, { color: colors.mutedText }]} numberOfLines={2}>
+      <Text style={styles.cardSummary} numberOfLines={2}>
         {call.summary || 'No summary available'}
       </Text>
     </View>
@@ -38,8 +36,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#dee2e6'
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF'
   },
   cardHeader: {
     flexDirection: 'row',
