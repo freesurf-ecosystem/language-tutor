@@ -5,7 +5,7 @@ import { Mic, Square, Volume2, EllipsisVertical } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const WORKER_URL = 'https://freesurf-tutor.freesurf.workers.dev';
+const WORKER_URL = 'https://freesurf-language-tutor.freesurf.workers.dev';
 
 const NATIVE_LANGS = [
   { code: 'es', label: 'Español' },

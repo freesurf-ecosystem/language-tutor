@@ -20,7 +20,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
 RUN pip install huggingface_hub[hf_transfer]
 
-RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen2.5-3B-Instruct', cache_dir='/models')"
+CMD python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen2.5-3B-Instruct', cache_dir='/models')"
 
 # Stage 2: Runtime — no LLM baked in
 FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04

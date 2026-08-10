@@ -21,6 +21,9 @@ pnpm-lock.yaml
 Thumbs.db
 desktop.ini
 
+# Wrangler
+.wrangler/
+
 # Build outputs
 dist/
 build/
