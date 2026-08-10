@@ -1,142 +1,107 @@
-# Ali - AI Voice Assistant
+# FreeSurf English Tutor
 
-Monorepo for a hands-free AI assistant accessible via phone call. Users can speak with an AI while multitasking, with automatic transcription, summarization, and note-taking.
+Open-source language tutor powered by self-hosted LLMs. No API keys, no per-token billing — everything runs on your own GPU.
+
+Users speak in their target language, get grammar corrections, and hear a native-sounding tutor response — all processed in memory, never shared with third-party AI companies.
+
+## How It Works
+
+```
+Mobile App → Cloudflare Worker → RunPod GPU (STT + LLM + TTS)
+                  ↕
+              Supabase (auth)
+```
+
+1. Student presses record, speaks in their target language
+2. Audio sent to Cloudflare Worker → forwarded to RunPod GPU endpoint
+3. Self-hosted pipeline processes the audio:
+   - **faster-whisper** — speech-to-text and language detection
+   - **Qwen 2.5 3B** (4-bit quantized) — grammar correction and tutor response
+   - **Kokoro** — multilingual text-to-speech with auto language switching
+4. Corrected text + audio response returned to the mobile app
 
 ## Repository Structure
 
 ```
-emmaline/
-├── backend/                  # Node.js Express server
-│   ├── src/
-│   │   ├── routes/          # API endpoints
-│   │   ├── controllers/      # Business logic
-│   │   ├── services/        # External service integrations (Twilio, OpenAI, etc.)
-│   │   ├── middleware/      # Authentication, error handling
-│   │   ├── utils/           # Helper functions
-│   │   └── index.js         # Entry point
-│   ├── tests/
-│   ├── .env.example
-│   └── package.json
-│
-├── mobile/                   # React Native app
-│   ├── src/
-│   │   ├── screens/         # Call timeline, notes, detail views
-│   │   ├── components/      # Reusable UI components
-│   │   ├── services/        # API calls, local storage
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── context/         # Global state management
-│   │   ├── navigation/      # Navigation config
-│   │   ├── theme/           # Styling, constants
-│   │   └── App.js           # Entry point
-│   ├── assets/
-│   ├── .env.example
-│   └── package.json
-│
-├── services/                 # Shared business logic
-│   ├── transcription/       # Speech-to-text logic
-│   ├── summarization/       # AI summarization logic
-│   ├── ai/                  # AI response generation
-│   └── index.js
-│
-├── database/                 # Database schema & migrations
-│   ├── migrations/          # Supabase migrations
-│   ├── schema.sql           # Full schema definition
-│   └── seeds/               # Sample data
-│
-├── shared/                   # Shared types, constants, utilities
-│   ├── types.js             # Shared TypeScript/JSDoc types
-│   ├── constants.js         # App-wide constants
-│   ├── utils.js             # Utility functions
-│   └── package.json
-│
-├── docs/                     # Documentation
-│   ├── CONCEPT.md           # Project overview
-│   ├── ARCHITECTURE.md      # Technical architecture
-│   ├── API.md               # API documentation
-│   └── SETUP.md             # Developer setup guide
-│
-├── .gitignore
-├── .env.example             # Root env template
-├── package.json             # Root monorepo config (npm workspaces)
-└── README.md                # This file
+├── mobile/                    # Expo React Native app
+│   └── src/screens/           # Tutor, Notes, Login, etc.
+├── serverless/                # RunPod GPU handler
+│   ├── handler.py             # STT + LLM + TTS pipeline
+│   └── Dockerfile             # Multi-stage (model → volume, not baked in)
+├── worker/                    # Cloudflare Worker
+│   └── src/index.ts           # Proxies mobile → RunPod
+├── backend/                   # Legacy Express server (phone calls, billing — not used by tutor)
+└── database/                  # Supabase schema & migrations
 ```
 
 ## Tech Stack
 
-- **Backend**: Node.js + Express
-- **Mobile**: React Native (Expo or bare workflow)
-- **Database**: Supabase (PostgreSQL)
-- **Phone Service**: Twilio
-- **AI**: OpenAI API
-- **Speech Services**: Google Cloud Speech-to-Text & Text-to-Speech
-- **Package Manager**: npm with workspaces
+| Component | Technology |
+|-----------|-----------|
+| Speech-to-Text | faster-whisper (base) |
+| LLM | Qwen 2.5 3B Instruct (4-bit) |
+| Text-to-Speech | Kokoro (multi-language) |
+| GPU | NVIDIA CUDA 12.4 (L4 / A5000 / A100) |
+| API Gateway | Cloudflare Workers |
+| Auth & Database | Supabase |
+| Mobile | Expo / React Native |
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm 8+ (for workspaces support)
-- Twilio account
-- Supabase account
-- OpenAI API key
 
-### Installation
+- RunPod account with GPU access
+- Cloudflare account with Workers
+- Supabase project
+- HuggingFace account (for Qwen model)
 
-1. **Clone and install dependencies**
-   ```bash
-   git clone <repo-url>
-   cd emmaline
-   npm install
-   ```
+### GPU Deployment
 
-2. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your keys
-   ```
+```bash
+cd serverless
 
-3. **Set up database**
-   ```bash
-   cd database
-   # Run migrations in Supabase dashboard or using Supabase CLI
-   ```
+# Download the LLM once to a persistent volume
+docker build --target=downloader -t model-downloader-tutor .
+docker run -v /models:/models model-downloader-tutor
 
-4. **Start backend**
-   ```bash
-   npm run dev --workspace=backend
-   ```
+# Build and push the runtime image
+docker build -t your-registry/freesurf-language-tutor:v1 .
+docker push your-registry/freesurf-language-tutor:v1
+```
 
-5. **Start mobile app**
-   ```bash
-   npm run start --workspace=mobile
-   ```
+On RunPod, create a serverless template with volume mount `/runpod/volumes/models:/models`.
 
-## Project Phases
+### Worker Deployment
 
-### Phase 1 (MVP)
-- Twilio phone integration
-- Live speech-to-text and AI response
-- Basic transcription storage
-- Call summary extraction
-- Timeline view in mobile app
+```bash
+cd worker
+npx wrangler secret put RUNPOD_API_KEY
+npx wrangler secret put RUNPOD_ENDPOINT_ID
+npx wrangler deploy
+```
 
-### Phase 2+
-- OpenClaw ecosystem integration
-- Email sorting/summarization
-- Code project initiation
-- Advanced developer features
+### Mobile App
 
-## Documentation
+```bash
+cd mobile
+cp .env.example .env.local
+# Set EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY,
+# EXPO_PUBLIC_API_URL (point to your Cloudflare Worker)
+npm install
+npx expo start
+```
 
-- [Concept & Vision](docs/CONCEPT.md)
-- Architecture (coming soon)
-- API Docs (coming soon)
-- Setup Guide (coming soon)
+## Environment Variables
 
-## Contributing
+**Worker:**
+- `RUNPOD_API_KEY` — RunPod API key
+- `RUNPOD_ENDPOINT_ID` — Serverless endpoint ID
 
-(Guidelines TBD)
+**Mobile:**
+- `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
+- `EXPO_PUBLIC_API_URL` — Worker URL
 
 ## License
 
-(TBD)
+GNU General Public License v3.0
