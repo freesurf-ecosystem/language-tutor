@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "FreeSurf English Tutor",
-    "slug": "freesurf-english-tutor",
+    "name": "English Tutor",
+    "slug": "emmaline",
     "owner": "freesurf",
-    "version": "0.1.0",
+    "version": "0.3.0",
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "orientation": "portrait",
@@ -20,6 +20,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "FreeSurf English Tutor needs microphone access so you can practice speaking with your AI tutor.",
+        "NSUserTrackingUsageDescription": "Your device identifier is used to serve personalized ads and keep FreeSurf free.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

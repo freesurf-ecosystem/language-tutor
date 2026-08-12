@@ -8,8 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "APP_VARIANT": "development",
-        "EXPO_PUBLIC_API_URL": "https://api.oov.digital/api"
+        "APP_VARIANT": "development"
       }
     },
     "preview": {
@@ -20,8 +19,7 @@
         "applicationArchivePath": "android/app/build/outputs/apk/release/app-release.apk"
       },
       "env": {
-        "APP_VARIANT": "preview",
-        "EXPO_PUBLIC_API_URL": "https://api.oov.digital/api"
+        "APP_VARIANT": "preview"
       }
     },
     "production": {
@@ -34,7 +32,7 @@
       },
       "env": {
         "APP_VARIANT": "production",
-        "EXPO_PUBLIC_API_URL": "https://api.oov.digital/api"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production_test": {
@@ -44,9 +42,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "APP_VARIANT": "production",
-        "EXPO_PUBLIC_API_URL": "https://api.oov.digital/api",
-        "SENTRY_AUTH_TOKEN": "none"
+        "APP_VARIANT": "production"
       }
     },
     "debug_production": {
@@ -55,9 +51,7 @@
         "buildType": "apk"
       },
       "env": {
-        "APP_VARIANT": "production",
-        "EXPO_PUBLIC_API_URL": "https://api.oov.digital/api",
-        "SENTRY_AUTH_TOKEN": "none"
+        "APP_VARIANT": "production"
       }
     }
   },

@@ -6,7 +6,6 @@ const buildProfile = process.env.EAS_BUILD_PROFILE || process.env.APP_VARIANT ||
 const appVariant = process.env.APP_VARIANT || buildProfile;
 const isProduction = appVariant === 'production';
 const isDevelopmentClient = appVariant === 'development';
-const liveCallsEnabled = String(process.env.EXPO_PUBLIC_ENABLE_LIVE_CALLS || 'false').trim().toLowerCase() === 'true';
 
 const productionBundleId = 'com.emmaline.app';
 const developmentBundleId = 'com.emmaline.app.dev';
@@ -90,17 +89,7 @@ module.exports = () => {
     ? baseConfig.plugins.filter((plugin) => plugin !== 'expo-dev-client')
     : [];
 
-  const filteredPlugins = plugins.filter((plugin) => {
-    if (plugin === './plugins/withTwilioVoiceApplicationProxy') {
-      return liveCallsEnabled;
-    }
-
-    if (Array.isArray(plugin) && plugin[0] === './plugins/withTwilioVoiceApplicationProxy') {
-      return liveCallsEnabled;
-    }
-
-    return true;
-  });
+  const filteredPlugins = [...plugins];
 
   if (isDevelopmentClient) {
     filteredPlugins.splice(1, 0, 'expo-dev-client');
@@ -112,10 +101,6 @@ module.exports = () => {
 
   if (!filteredPlugins.includes('expo-apple-authentication')) {
     filteredPlugins.push('expo-apple-authentication');
-  }
-
-  if (!filteredPlugins.includes('@config-plugins/react-native-webrtc')) {
-    filteredPlugins.push('@config-plugins/react-native-webrtc');
   }
 
   const hasAppsFlyerPlugin = filteredPlugins.some((plugin) => {
@@ -169,7 +154,6 @@ module.exports = () => {
       ...(baseConfig.extra || {}),
       appVariant,
       apiUrl: normalizeOptionalConfigValue(process.env.EXPO_PUBLIC_API_URL),
-      enableLiveCalls: liveCallsEnabled,
       sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN || null,
       appsflyerDevKey: process.env.APPSFLYER_DEV_KEY || null,
       appsflyerIosAppId: process.env.APPSFLYER_IOS_APP_ID || '6783906612'

@@ -10,6 +10,8 @@ import io
 import os
 import traceback
 import sys
+import subprocess
+import tempfile
 import runpod
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -19,7 +21,7 @@ try:
     import numpy as np
     import soundfile as sf
     from faster_whisper import WhisperModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from kokoro import KPipeline
     from langdetect import detect, DetectorFactory
     DetectorFactory.seed = 0
@@ -34,22 +36,28 @@ except Exception:
     sys.stderr.flush()
     raise
 
-# Language → Kokoro lang code mapping
+# Language → Kokoro lang code mapping (only codes with actual voice files)
 LANG_MAP = {
-    "en": "a", "es": "e", "fr": "f", "de": "d", "it": "i",
-    "pt": "p", "ja": "j", "hi": "h", "pl": "p",
+    "en": "a", "es": "e", "fr": "f", "it": "i",
+    "pt": "p", "de": "d", "hi": "h", "ja": "j",
 }
-# Kokoro code → ISO 639-1
 REVERSE_LANG_MAP = {v: k for k, v in LANG_MAP.items()}
 
-TUTOR_PROMPT = """You are a friendly language tutor. The student just said something in {language}.
-{marking_instruction}
-1. If there are grammar or pronunciation errors, gently correct them.
-2. Respond naturally in {language} as a conversation partner. Keep it brief (1-3 sentences).
-3. Add encouragement.
+# Default female voice per Kokoro lang code
+VOICE_MAP = {
+    "a": "af_heart",   # American English
+    "b": "bf_emma",    # British English
+    "e": "ef_dora",    # Spanish
+    "f": "ff_siwis",   # French
+    "i": "if_sara",    # Italian
+    "p": "pf_dora",    # Portuguese
+    "d": "df_anna",    # German
+    "h": "hf_alpha",   # Hindi
+    "j": "jf_alpha",   # Japanese
+}
 
-Format your response as JSON:
-{{"correction": "corrected version of what they said (or null if correct)", "response": "your conversational reply in {language}"}}"""
+TUTOR_PROMPT = """You teach English. Only speak English and {native_lang}.{marking_instruction}
+Keep replies short. Be encouraging. No JSON."""
 
 _whisper = None
 _llm = None
@@ -68,12 +76,12 @@ def get_llm():
     global _llm, _tokenizer
     if _llm is None:
         print("Loading LLM...", flush=True)
+        quant = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)
         _llm = AutoModelForCausalLM.from_pretrained(
             "Qwen/Qwen2.5-3B-Instruct",
-            torch_dtype=torch.bfloat16,
+            dtype=torch.bfloat16,
             device_map="auto",
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
+            quantization_config=quant,
         )
         _tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-3B-Instruct")
         print("LLM ready", flush=True)
@@ -87,19 +95,37 @@ def get_kokoro(lang_code="a"):
 def transcribe_audio(audio_base64: str):
     """Returns (text, language_code)"""
     audio_bytes = base64.b64decode(audio_base64)
-    audio_np, sr = sf.read(io.BytesIO(audio_bytes))
-    if len(audio_np.shape) > 1:
-        audio_np = audio_np.mean(axis=1)
-    if sr != 16000:
-        import librosa
-        audio_np = librosa.resample(audio_np.astype(np.float32), orig_sr=sr, target_sr=16000)
-        sr = 16000
-    audio_np = audio_np.astype(np.float32)
-
-    model = get_whisper()
-    segments, info = model.transcribe(audio_np, beam_size=5)
-    text = " ".join(s.text.strip() for s in segments)
-    return text, info.language
+    wav_path = None
+    input_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".audio", delete=False) as f:
+            f.write(audio_bytes)
+            input_path = f.name
+        wav_path = input_path + ".wav"
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", input_path, "-ar", "16000", "-ac", "1", "-sample_fmt", "s16", wav_path],
+            capture_output=True, check=True, timeout=30,
+        )
+        model = get_whisper()
+        segments, info = model.transcribe(
+            wav_path,
+            beam_size=5,
+            vad_filter=True,
+            vad_parameters=dict(
+                threshold=0.3,
+                min_speech_duration_ms=200,
+                min_silence_duration_ms=300,
+                speech_pad_ms=200,
+            ),
+        )
+        text = " ".join(s.text.strip() for s in segments)
+        print(f"[Whisper] transcribed: '{text}' lang={info.language}", flush=True)
+        return text, info.language
+    finally:
+        if wav_path and os.path.exists(wav_path):
+            os.unlink(wav_path)
+        if input_path and os.path.exists(input_path):
+            os.unlink(input_path)
 
 def tutor_response(text: str, lang: str, native_lang: str = ""):
     """Returns (correction, tutor_reply)"""
@@ -116,7 +142,7 @@ def tutor_response(text: str, lang: str, native_lang: str = ""):
             f"wrap it exactly like this: [lang:{native_lang}]word[/lang]. "
         )
 
-    prompt = TUTOR_PROMPT.replace("{language}", lang_name).replace(
+    prompt = TUTOR_PROMPT.replace("{native_lang}", native_name if native_lang else "their language").replace(
         "{marking_instruction}", marking
     )
     messages = [
@@ -127,16 +153,19 @@ def tutor_response(text: str, lang: str, native_lang: str = ""):
     inputs = tokenizer(formatted, return_tensors="pt").to(model.device)
     output = model.generate(**inputs, max_new_tokens=256, temperature=0.7, do_sample=True)
     response = tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+    print(f"[Qwen] raw: {response[:300]}", flush=True)
 
-    import re, json
-    json_match = re.search(r'\{.*\}', response.replace("\n", " "), re.DOTALL)
-    if json_match:
-        try:
-            data = json.loads(json_match.group(0))
-            return data.get("correction"), data.get("response", response)
-        except:
-            pass
-    return None, response
+    # Strip any JSON artifacts Qwen may still spit out
+    import re
+    response = re.sub(r'\{[\s"]*"(?:correction|response)"[\s:,"\{\}a-zA-Z0-9]*\}', '', response)
+    response = response.strip()
+    return None, response.strip()
+
+def strip_lang_tags(text: str):
+    """Remove [lang:XX] and [/lang] tags from display text while keeping content."""
+    import re
+    return re.sub(r'\[/?lang:\w*\]', '', text).strip()
+
 
 def split_by_language(text: str, default_lang_iso: str = "en"):
     """Split mixed-language text into [(segment, kokoro_lang_code), ...].
@@ -225,7 +254,8 @@ def speak_mixed(text: str, default_lang_iso: str = "en"):
 def speak(text: str, lang_code: str = "a"):
     """Returns base64 WAV audio for a single-language segment"""
     pipeline = get_kokoro(lang_code)
-    generator = pipeline(text, voice=f"{lang_code}f_heart", speed=1.0)
+    voice = VOICE_MAP.get(lang_code, "af_heart")
+    generator = pipeline(text, voice=voice, speed=1.0)
     all_samples = []
     for _, _, audio in generator:
         all_samples.append(audio)
@@ -249,16 +279,25 @@ def handler(event):
     try:
         text, detected_lang = transcribe_audio(audio_b64)
         if not text.strip():
-            return {"error": "No speech detected"}
+            reply = "I didn't hear you. Can you say that again?"
+            audio_b64_out = speak(reply, "a")
+            return {
+                "audio_base64": audio_b64_out,
+                "original": "",
+                "correction": "",
+                "response": reply,
+                "language": "en",
+            }
 
         correction, reply = tutor_response(text, detected_lang, native_language)
-        default_iso = native_language if native_language else detected_lang
+        default_iso = "en"
         audio = speak_mixed(reply, default_iso) if reply else None
+        display_reply = strip_lang_tags(reply) if reply else reply
 
         return {
             "original": text,
             "correction": correction,
-            "response": reply,
+            "response": display_reply,
             "audio_base64": audio,
             "language": detected_lang,
         }
