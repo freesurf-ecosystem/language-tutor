@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "English Tutor",
+    "name": "FreeSurf English Tutor",
     "slug": "emmaline",
     "owner": "freesurf",
     "version": "0.3.0",
@@ -19,6 +19,7 @@
       "bundleIdentifier": "com.emmaline.app",
       "supportsTablet": true,
       "infoPlist": {
+        "CFBundleDisplayName": "English Tutor",
         "NSMicrophoneUsageDescription": "FreeSurf English Tutor needs microphone access so you can practice speaking with your AI tutor.",
         "NSUserTrackingUsageDescription": "Your device identifier is used to serve personalized ads and keep FreeSurf free.",
         "ITSAppUsesNonExemptEncryption": false
