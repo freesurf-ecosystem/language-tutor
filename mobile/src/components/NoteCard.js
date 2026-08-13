@@ -28,7 +28,7 @@ const NoteCard = ({ note, onPress, onLongPress, selected, selectMode }) => {
       onPress={handlePress}
       onLongPress={handleLongPress}
       activeOpacity={0.7}
-      delayLongPress={500}
+      delayLongPress={800}
     >
       <View style={[s.card, { backgroundColor: c.surface }, selected && { borderColor: c.primary }]}>
         {selectMode && (
