@@ -61,3 +61,5 @@ mobile/android/.cxx/
 mobile/android/app/.cxx/
 mobile/*.pem
 mobile/*.jks
+mobile/credentials.json
+mobile/credentials/

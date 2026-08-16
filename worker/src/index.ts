@@ -1,13 +1,10 @@
 /**
  * FreeSurf Language Tutor — Cloudflare Worker
- * Proxies audio recordings → RunPod STT+LLM+TTS pipeline.
+ * Proxies audio recordings → consolidated AI pod (STT+LLM+TTS).
  */
 export interface Env {
-  RUNPOD_API_KEY: string;
-  RUNPOD_ENDPOINT_ID: string;
+  POD_URL: string;
 }
-
-const RUNPOD_API_BASE = "https://api.runpod.ai/v2";
 
 const ALLOWED_ORIGINS = [
   "http://localhost:5173",
@@ -48,7 +45,7 @@ export default {
       return jsonResponse({ error: "Not found" }, 404, headers);
     }
 
-    if (!env.RUNPOD_API_KEY || !env.RUNPOD_ENDPOINT_ID) {
+    if (!env.POD_URL) {
       return jsonResponse({ error: "Service not configured" }, 500, headers);
     }
 
@@ -58,37 +55,30 @@ export default {
         return jsonResponse({ error: "No audio provided" }, 400, headers);
       }
 
-      const runpodRes = await fetch(
-        `${RUNPOD_API_BASE}/${env.RUNPOD_ENDPOINT_ID}/runsync`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${env.RUNPOD_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            input: {
-              audio_base64: body.audio_base64,
-              native_language: body.native_language || "",
-            },
-          }),
-        }
-      );
+      const podRes = await fetch(env.POD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_type: "tutor",
+          audio_base64: body.audio_base64,
+          native_language: body.native_language || "",
+        }),
+      });
 
-      const runpodData = (await runpodRes.json()) as {
-        output?: { error?: string; audio_base64?: string; original?: string; correction?: string | null; response?: string; language?: string };
+      const podData = (await podRes.json()) as {
         error?: string;
+        audio_base64?: string;
+        original?: string;
+        correction?: string | null;
+        response?: string;
+        language?: string;
       };
 
-      if (!runpodRes.ok || runpodData.error || runpodData.output?.error) {
-        return jsonResponse(
-          { error: runpodData.error || runpodData.output?.error || "Tutor request failed" },
-          runpodRes.status || 500,
-          headers
-        );
+      if (!podRes.ok || podData.error) {
+        return jsonResponse({ error: podData.error || "Tutor request failed" }, podRes.status || 500, headers);
       }
 
-      return jsonResponse(runpodData.output || {}, 200, headers);
+      return jsonResponse(podData, 200, headers);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Internal server error";
       return jsonResponse({ error: msg }, 500, headers);
