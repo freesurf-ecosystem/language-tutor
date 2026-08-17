@@ -25,6 +25,7 @@ export default function TutorScreen() {
   const [messages, setMessages] = useState([]);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [transcriptNoteId, setTranscriptNoteId] = useState(null);
   const recordingRef = useRef(null);
   const soundRef = useRef(null);
 
@@ -38,6 +39,35 @@ export default function TutorScreen() {
     setNativeLang(code);
     setShowSetup(false);
     AsyncStorage.setItem('tutor-native-lang', code);
+  }
+
+  async function saveTranscript(original, response) {
+    try {
+      const NOTES_KEY = 'freesurf-tutor-notes';
+      const raw = await AsyncStorage.getItem(NOTES_KEY);
+      const notes = raw ? JSON.parse(raw) : [];
+      const existing = transcriptNoteId ? notes.find((n) => n.id === transcriptNoteId) : null;
+      const entry = `You: ${original || ''}\nTutor: ${response || ''}`;
+      const content = existing ? `${existing.content}\n\n${entry}` : entry;
+      if (existing) {
+        const updated = notes.map((n) => (n.id === transcriptNoteId ? { ...n, content, updatedAt: Date.now() } : n));
+        await AsyncStorage.setItem(NOTES_KEY, JSON.stringify(updated));
+      } else {
+        const id = `note-tx-${Date.now()}`;
+        const note = {
+          id,
+          title: `Transcript ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`,
+          content,
+          topic: 'Transcripts',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        await AsyncStorage.setItem(NOTES_KEY, JSON.stringify([note, ...notes]));
+        setTranscriptNoteId(id);
+      }
+    } catch (e) {
+      console.log('[Transcript] save error:', e?.message || e);
+    }
   }
 
   async function startRecording() {
@@ -84,6 +114,7 @@ export default function TutorScreen() {
         response: data.response,
         audio: data.audio_base64,
       }]);
+      saveTranscript(data.original, data.response);
     } catch (e) {
       Alert.alert('Error', e.message || 'Tutor request failed.');
     }
