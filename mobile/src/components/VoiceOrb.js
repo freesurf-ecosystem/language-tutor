@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, Text, Alert, Animated, Easing, StyleSheet, Modal, ScrollView, Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronDown, X, Volume2, Phone, Mic, MicOff } from 'lucide-react-native';
 
 const WORKER_URL = 'https://freesurf-language-tutor.freesurf.workers.dev';
@@ -82,6 +83,29 @@ export default function VoiceOrb({ isDark }) {
     }
   }, [state]);
 
+  async function saveTranscriptNote() {
+    if (!transcript.length) return;
+    try {
+      const NOTES_KEY = 'freesurf-tutor-notes';
+      const raw = await AsyncStorage.getItem(NOTES_KEY);
+      const notes = raw ? JSON.parse(raw) : [];
+      const content = transcript
+        .map((line) => `${line.role === 'user' ? 'You' : 'Tutor'}: ${line.text}`)
+        .join('\n\n');
+      const note = {
+        id: `note-tx-${Date.now()}`,
+        title: `Transcript ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`,
+        content,
+        topic: 'Transcripts',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await AsyncStorage.setItem(NOTES_KEY, JSON.stringify([note, ...notes]));
+    } catch (e) {
+      console.warn('[VoiceOrb] transcript save failed:', e?.message || e);
+    }
+  }
+
   function cancelCall() {
     if (recordingRef.current) {
       recordingRef.current.stopAndUnloadAsync().catch(() => {});
@@ -92,6 +116,7 @@ export default function VoiceOrb({ isDark }) {
       soundRef.current.unloadAsync().catch(() => {});
       soundRef.current = null;
     }
+    saveTranscriptNote();
     setState('idle');
     setExpanded(false);
     setStatusText('');
@@ -158,7 +183,11 @@ export default function VoiceOrb({ isDark }) {
       const res = await fetch(`${WORKER_URL}/api/tutor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio_base64: base64, native_language: nativeLang }),
+        body: JSON.stringify({
+          audio_base64: base64,
+          native_language: nativeLang,
+          history: transcript.map((line) => ({ role: line.role, text: line.text })),
+        }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
