@@ -131,7 +131,16 @@ export default function VoiceOrb({ isDark }) {
     }
     setNativeLang(lang);
     try {
-      await Audio.requestPermissionsAsync();
+      let perm = await Audio.requestPermissionsAsync();
+      if (perm.status !== 'granted') {
+        await new Promise(r => setTimeout(r, 500));
+        perm = await Audio.requestPermissionsAsync();
+      }
+      if (perm.status !== 'granted') {
+        Alert.alert('Permission needed', 'Please tap the record button one more time.');
+        setState('idle');
+        return;
+      }
       if (soundRef.current) {
         try { await soundRef.current.unloadAsync(); } catch {}
         soundRef.current = null;
