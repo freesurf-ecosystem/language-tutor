@@ -31,7 +31,7 @@
       "backgroundColor": "#000000"
     },
     "android": {
-      "versionCode": 21,
+      "versionCode": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon-dark-1024.png",
         "backgroundColor": "#000000"
