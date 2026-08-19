@@ -16,6 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      APP_VARIANT: "production"
       SENTRY_DISABLE_AUTO_UPLOAD: "true"
       SENTRY_DISABLE_NATIVE_DEBUG_UPLOAD: "true"
     steps:
