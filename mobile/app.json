@@ -3,7 +3,7 @@
     "name": "English Tutor",
     "slug": "emmaline",
     "owner": "freesurf",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "orientation": "portrait",
@@ -31,7 +31,7 @@
       "backgroundColor": "#000000"
     },
     "android": {
-      "versionCode": 27,
+      "versionCode": 28,
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon-dark-1024.png",
         "backgroundColor": "#000000"
@@ -50,7 +50,7 @@
     },
     "plugins": [
       "expo-secure-store",
-      ["expo-build-properties", { "ios": { "deploymentTarget": "16.0" } }]
+      ["expo-build-properties", { "ios": { "deploymentTarget": "16.0" }, "android": { "compileSdkVersion": 36, "targetSdkVersion": 36, "buildToolsVersion": "36.0.0" } }]
     ],
     "extra": {
       "eas": {
