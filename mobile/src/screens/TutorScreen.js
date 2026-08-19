@@ -8,12 +8,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const WORKER_URL = 'https://freesurf-language-tutor.freesurf.workers.dev';
 
 const NATIVE_LANGS = [
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'da', label: 'Dansk' },
   { code: 'de', label: 'Deutsch' },
-  { code: 'pt', label: 'Português' },
+  { code: 'el', label: 'Ελληνικά' },
+  { code: 'es', label: 'Español' },
+  { code: 'fi', label: 'Suomi' },
+  { code: 'fr', label: 'Français' },
+  { code: 'he', label: 'עברית' },
+  { code: 'hi', label: 'हिन्दी' },
   { code: 'it', label: 'Italiano' },
   { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+  { code: 'ms', label: 'Bahasa Melayu' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'no', label: 'Norsk' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'pt', label: 'Português' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'sv', label: 'Svenska' },
+  { code: 'sw', label: 'Kiswahili' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'zh', label: '中文' },
 ];
 
 export default function TutorScreen() {

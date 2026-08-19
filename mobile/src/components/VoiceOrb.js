@@ -9,12 +9,28 @@ const WORKER_URL = 'https://freesurf-language-tutor.freesurf.workers.dev';
 const LANG_KEY = 'tutor-native-lang';
 
 const NATIVE_LANGS = [
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'da', label: 'Dansk' },
   { code: 'de', label: 'Deutsch' },
-  { code: 'pt', label: 'Português' },
+  { code: 'el', label: 'Ελληνικά' },
+  { code: 'es', label: 'Español' },
+  { code: 'fi', label: 'Suomi' },
+  { code: 'fr', label: 'Français' },
+  { code: 'he', label: 'עברית' },
+  { code: 'hi', label: 'हिन्दी' },
   { code: 'it', label: 'Italiano' },
   { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+  { code: 'ms', label: 'Bahasa Melayu' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'no', label: 'Norsk' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'pt', label: 'Português' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'sv', label: 'Svenska' },
+  { code: 'sw', label: 'Kiswahili' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'zh', label: '中文' },
 ];
 
 interface TranscriptLine { role: 'user' | 'tutor'; text: string; }
@@ -286,6 +302,9 @@ export default function VoiceOrb({ isDark }) {
         </TouchableOpacity>
       ) : (state !== 'idle' || transcript.length > 0) && expanded ? (
         <View style={sty.expandedOverlay}>
+          <TouchableOpacity style={sty.minimizeBtn} onPress={() => setExpanded(false)}>
+            <ChevronDown size={20} color={bg.text} />
+          </TouchableOpacity>
           <ScrollView style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingTop: 60, paddingBottom: 20 }}>
             {lastLines.map((line, i) => (
               <View key={i} style={[sty.transcriptLine, { backgroundColor: line.role === 'user' ? (isDark ? 'rgba(91,140,255,0.12)' : 'rgba(59,108,255,0.08)') : 'transparent' }]}>
@@ -318,9 +337,6 @@ export default function VoiceOrb({ isDark }) {
             <TouchableOpacity style={[sty.ctrlBtn, { backgroundColor: audioRoute === 'speaker' ? bg.accent : 'rgba(255,255,255,0.1)' }]} onPress={() => setAudioRoute(audioRoute === 'speaker' ? 'phone' : 'speaker')}>
               {audioRoute === 'speaker' ? <Volume2 size={16} color="#fff" /> : <Phone size={16} color="#fff" />}
             </TouchableOpacity>
-            <TouchableOpacity style={[sty.ctrlBtn, { backgroundColor: 'rgba(255,255,255,0.1)' }]} onPress={() => setExpanded(false)}>
-              <ChevronDown size={18} color={bg.text} />
-            </TouchableOpacity>
             <TouchableOpacity style={[sty.ctrlBtn, { backgroundColor: 'rgba(255,80,80,0.3)' }]} onPress={cancelCall}>
               <X size={18} color="#f87171" />
             </TouchableOpacity>
@@ -350,7 +366,8 @@ const sty = StyleSheet.create({
   fab: { position: 'absolute', bottom: 40, right: 20, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', zIndex: 100, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   miniChip: { position: 'absolute', bottom: 40, right: 20, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, zIndex: 100, elevation: 8 },
   miniText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  expandedOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 150 },
+  expandedOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 150 },
+  minimizeBtn: { position: 'absolute', top: 55, right: 16, width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.12)', zIndex: 10 },
   orbContainer: { width: 100, height: 100, justifyContent: 'center', alignItems: 'center' },
   orb: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center' },
   ring: { position: 'absolute', width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#5b8cff' },
