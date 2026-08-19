@@ -3,7 +3,7 @@
     "name": "English Tutor",
     "slug": "emmaline",
     "owner": "freesurf",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "orientation": "portrait",
@@ -31,7 +31,7 @@
       "backgroundColor": "#000000"
     },
     "android": {
-      "versionCode": 26,
+      "versionCode": 27,
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon-dark-1024.png",
         "backgroundColor": "#000000"
