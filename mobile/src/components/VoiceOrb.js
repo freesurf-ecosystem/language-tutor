@@ -154,13 +154,9 @@ export default function VoiceOrb({ isDark }) {
     }
     setNativeLang(lang);
     try {
-      let perm = await Audio.requestPermissionsAsync();
+      const perm = await Audio.requestPermissionsAsync();
       if (perm.status !== 'granted') {
-        await new Promise(r => setTimeout(r, 500));
-        perm = await Audio.requestPermissionsAsync();
-      }
-      if (perm.status !== 'granted') {
-        Alert.alert('Permission needed', 'Please tap the record button one more time.');
+        Alert.alert('Permission needed', 'Please allow microphone access to speak with your tutor.');
         setState('idle');
         return;
       }
@@ -168,8 +164,18 @@ export default function VoiceOrb({ isDark }) {
         try { await soundRef.current.unloadAsync(); } catch {}
         soundRef.current = null;
       }
+      // Let the iOS audio session settle after the permission prompt.
+      await new Promise((r) => setTimeout(r, 250));
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      let rec;
+      try {
+        rec = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      } catch (err) {
+        // Retry once — the iOS audio session can lag behind the permission grant.
+        await new Promise((r) => setTimeout(r, 400));
+        rec = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      }
+      const recording = rec.recording;
       recordingRef.current = recording;
       recordingStartRef.current = Date.now();
       setState('recording');

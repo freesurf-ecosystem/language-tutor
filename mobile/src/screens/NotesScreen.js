@@ -125,8 +125,12 @@ export default function NotesScreen() {
     console.log('[Notes] rendering editor for note:', editor.id);
     const handleSave = (saved) => {
       console.log('[Notes] auto-saving note:', saved.id);
-      const existing = notes.findIndex(n => n.id === saved.id) >= 0;
-      saveNotes(existing ? notes.map(n => n.id === saved.id ? saved : n) : [saved, ...notes]);
+      setNotes(prev => {
+        const existing = prev.some(n => n.id === saved.id);
+        const next = existing ? prev.map(n => n.id === saved.id ? saved : n) : [saved, ...prev];
+        AsyncStorage.setItem(NOTES_KEY, JSON.stringify(next)).catch(() => {});
+        return next;
+      });
       setEditor(saved);
     };
     const handleClose = (saved) => {
