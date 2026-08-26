@@ -49,6 +49,8 @@ node_modules/
 .m2repository
 /android/
 /ios/
+mobile/android/
+mobile/ios/
 .watchman-cookie
 .eas-inspect*/
 mobile/.eas-inspect*/
