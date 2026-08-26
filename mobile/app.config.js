@@ -84,8 +84,10 @@ function applyBackupRulesFix(config) {
   return withAndroidManifest(config, (cfg) => {
     const app = cfg.modResults.manifest.application && cfg.modResults.manifest.application[0];
     if (app) {
-      const attr = 'android:fullBackupContent,android:dataExtractionRules';
-      app.$['tools:replace'] = app.$['tools:replace'] ? `${app.$['tools:replace']},${attr}` : attr;
+      const attrs = new Set((app.$['tools:replace'] || '').split(',').map((s) => s.trim()).filter(Boolean));
+      attrs.add('android:fullBackupContent');
+      attrs.add('android:dataExtractionRules');
+      app.$['tools:replace'] = [...attrs].join(',');
     }
     return cfg;
   });
