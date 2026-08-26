@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Linking, Switch, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Switch, StyleSheet, Animated, ScrollView } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { Menu } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -97,13 +97,17 @@ const AppHome = ({ isDark, onToggleTheme }) => {
             <TouchableOpacity style={s.menuItem} onPress={() => setShowLangPicker(!showLangPicker)}>
               <Text style={[s.menuText, { color: theme.colors.onSurface }]}>Native Language: {NATIVE_LANGS.find(l => l.code === nativeLang)?.label || 'Select'}</Text>
             </TouchableOpacity>
-            {showLangPicker && NATIVE_LANGS.map(l => (
-              <TouchableOpacity key={l.code} style={s.langOption} onPress={() => saveLang(l.code)}>
-                <Text style={[s.langText, { color: l.code === nativeLang ? theme.colors.primary : theme.colors.onSurface }]}>
-                  {l.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {showLangPicker && (
+              <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false}>
+                {NATIVE_LANGS.map(l => (
+                  <TouchableOpacity key={l.code} style={s.langOption} onPress={() => saveLang(l.code)}>
+                    <Text style={[s.langText, { color: l.code === nativeLang ? theme.colors.primary : theme.colors.onSurface }]}>
+                      {l.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
             <View style={[s.menuDivider, { borderTopColor: theme.colors.outline }]} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}>
               <Switch value={!isDark} onValueChange={onToggleTheme} trackColor={{ true: isDark ? '#ffffff' : '#111827', false: '#555' }} />

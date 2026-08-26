@@ -243,6 +243,8 @@ export default function VoiceOrb({ isDark }) {
       const { documentDirectory, writeAsStringAsync } = require('expo-file-system/legacy');
       const tempUri = documentDirectory + 'tutor-resp.wav';
       await writeAsStringAsync(tempUri, b64, { encoding: 'base64' });
+      // Route playback to the loudspeaker (recording left it on the earpiece).
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
       const { sound } = await Audio.Sound.createAsync({ uri: tempUri }, { shouldPlay: true }, (status) => {
         if (status.isLoaded && status.didJustFinish) {
           setStatusText('');
@@ -282,15 +284,17 @@ export default function VoiceOrb({ isDark }) {
             <Text style={[sty.setupSub, { color: isDark ? '#8899bb' : '#6c757d' }]}>
               What is your native language?
             </Text>
-            {NATIVE_LANGS.map(lang => (
-              <TouchableOpacity
-                key={lang.code}
-                style={[sty.langBtn, { borderColor: isDark ? '#1a1a1a' : '#dee2e6' }]}
-                onPress={() => saveLang(lang.code)}
-              >
-                <Text style={[sty.langText, { color: isDark ? '#e8ecff' : '#111827' }]}>{lang.label}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+              {NATIVE_LANGS.map(lang => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[sty.langBtn, { borderColor: isDark ? '#1a1a1a' : '#dee2e6' }]}
+                  onPress={() => saveLang(lang.code)}
+                >
+                  <Text style={[sty.langText, { color: isDark ? '#e8ecff' : '#111827' }]}>{lang.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -301,8 +305,8 @@ export default function VoiceOrb({ isDark }) {
           <Text style={sty.miniText}>{statusText || 'Voice'}</Text>
         </TouchableOpacity>
       ) : (state !== 'idle' || transcript.length > 0) && expanded ? (
-        <View style={sty.expandedOverlay}>
-          <TouchableOpacity style={sty.minimizeBtn} onPress={() => setExpanded(false)}>
+        <View style={[sty.expandedOverlay, { backgroundColor: bg.bg }]}>
+          <TouchableOpacity style={[sty.minimizeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }]} onPress={() => setExpanded(false)}>
             <ChevronDown size={20} color={bg.text} />
           </TouchableOpacity>
           <ScrollView style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingTop: 60, paddingBottom: 20 }}>
@@ -334,7 +338,7 @@ export default function VoiceOrb({ isDark }) {
           </View>
 
           <View style={sty.controls}>
-            <TouchableOpacity style={[sty.ctrlBtn, { backgroundColor: audioRoute === 'speaker' ? bg.accent : 'rgba(255,255,255,0.1)' }]} onPress={() => setAudioRoute(audioRoute === 'speaker' ? 'phone' : 'speaker')}>
+            <TouchableOpacity style={[sty.ctrlBtn, { backgroundColor: audioRoute === 'speaker' ? bg.accent : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)') }]} onPress={() => setAudioRoute(audioRoute === 'speaker' ? 'phone' : 'speaker')}>
               {audioRoute === 'speaker' ? <Volume2 size={16} color="#fff" /> : <Phone size={16} color="#fff" />}
             </TouchableOpacity>
             <TouchableOpacity style={[sty.ctrlBtn, { backgroundColor: 'rgba(255,80,80,0.3)' }]} onPress={cancelCall}>
