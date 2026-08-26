@@ -1,4 +1,5 @@
 const { withSentry } = require('@sentry/react-native/expo');
+const { withAndroidManifest } = require('@expo/config-plugins');
 const appJson = require('./app.json');
 
 const baseConfig = appJson.expo;
@@ -75,6 +76,19 @@ function getAppDisplayName(baseName, variant) {
   }
 
   return `${baseName} Dev`;
+}
+
+function applyBackupRulesFix(config) {
+  // expo-secure-store and the AppsFlyer SDK both declare backup rules, which
+  // trips the manifest merger. Force the app's own (secure-store) rules.
+  return withAndroidManifest(config, (cfg) => {
+    const app = cfg.modResults.manifest.application && cfg.modResults.manifest.application[0];
+    if (app) {
+      const attr = 'android:fullBackupContent,android:dataExtractionRules';
+      app.$['tools:replace'] = app.$['tools:replace'] ? `${app.$['tools:replace']},${attr}` : attr;
+    }
+    return cfg;
+  });
 }
 
 module.exports = () => {
@@ -161,12 +175,12 @@ module.exports = () => {
   };
 
   if (!sentryOrganization || !sentryProject) {
-    return config;
+    return applyBackupRulesFix(config);
   }
 
-  return withSentry(config, {
+  return applyBackupRulesFix(withSentry(config, {
     url: process.env.SENTRY_URL || 'https://sentry.io/',
     organization: sentryOrganization,
     project: sentryProject
-  });
+  }));
 };
