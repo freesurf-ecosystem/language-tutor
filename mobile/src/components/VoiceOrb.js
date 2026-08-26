@@ -4,6 +4,7 @@ import { Audio } from 'expo-av';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronDown, X, Volume2, Phone, Mic, MicOff } from 'lucide-react-native';
+import { notifyNotesChanged } from '../utils/notesBus';
 
 const WORKER_URL = 'https://freesurf-language-tutor.freesurf.workers.dev';
 const LANG_KEY = 'tutor-native-lang';
@@ -126,7 +127,7 @@ export default function VoiceOrb({ isDark }) {
     }
   }
 
-  function cancelCall() {
+  async function cancelCall() {
     if (recordingRef.current) {
       recordingRef.current.stopAndUnloadAsync().catch(() => {});
       recordingRef.current = null;
@@ -136,7 +137,8 @@ export default function VoiceOrb({ isDark }) {
       soundRef.current.unloadAsync().catch(() => {});
       soundRef.current = null;
     }
-    saveTranscriptNote();
+    await saveTranscriptNote();
+    notifyNotesChanged();
     setState('idle');
     setExpanded(false);
     setStatusText('');

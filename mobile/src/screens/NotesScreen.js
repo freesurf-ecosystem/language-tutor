@@ -8,6 +8,7 @@ import { useTheme } from 'react-native-paper';
 import { ChevronLeft, FileText, Plus, Mic, Trash2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NoteCard from '../components/NoteCard';
+import { subscribeNotes } from '../utils/notesBus';
 
 const NOTES_KEY = 'freesurf-tutor-notes';
 const AUTO_SAVE_MS = 800;
@@ -27,7 +28,10 @@ export default function NotesScreen() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  useEffect(() => { loadNotes(); }, []);
+  useEffect(() => {
+    loadNotes();
+    return subscribeNotes(loadNotes);
+  }, []);
 
   async function loadNotes() {
     console.log('[Notes] loading from storage...');
