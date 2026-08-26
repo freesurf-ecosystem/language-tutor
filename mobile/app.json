@@ -16,11 +16,11 @@
     ],
     "ios": {
       "icon": "./assets/app-icon-dark-1024.png",
-      "bundleIdentifier": "com.emmaline.app",
+      "bundleIdentifier": "tools.freesurf.tutor",
       "supportsTablet": true,
       "infoPlist": {
         "CFBundleDisplayName": "English Tutor",
-        "NSMicrophoneUsageDescription": "FreeSurf English Tutor needs microphone access so you can practice speaking with your AI tutor.",
+        "NSMicrophoneUsageDescription": "FreeSurf English Tutor uses your microphone to record your speaking practice so the AI tutor can listen, correct your grammar and pronunciation, and respond. Audio is processed to generate the response and is not stored.",
         "NSUserTrackingUsageDescription": "Your device identifier is used to serve personalized ads and keep FreeSurf free.",
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -46,10 +46,11 @@
         "BLUETOOTH_ADMIN",
         "BLUETOOTH_CONNECT"
       ],
-      "package": "com.emmaline.app"
+      "package": "tools.freesurf.tutor"
     },
     "plugins": [
       "expo-secure-store",
+      "expo-tracking-transparency",
       ["expo-build-properties", { "ios": { "deploymentTarget": "16.0" }, "android": { "compileSdkVersion": 36, "targetSdkVersion": 36, "buildToolsVersion": "36.0.0" } }]
     ],
     "extra": {

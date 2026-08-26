@@ -7,8 +7,8 @@ const appVariant = process.env.APP_VARIANT || buildProfile;
 const isProduction = appVariant === 'production';
 const isDevelopmentClient = appVariant === 'development';
 
-const productionBundleId = 'com.emmaline.app';
-const developmentBundleId = 'com.emmaline.app.dev';
+const productionBundleId = 'tools.freesurf.tutor';
+const developmentBundleId = 'tools.freesurf.tutor.dev';
 
 function normalizeOptionalConfigValue(value) {
   if (value === null || value === undefined || typeof value === 'object') {
