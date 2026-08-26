@@ -62,10 +62,14 @@ export default function VoiceOrb({ isDark }) {
     });
   }, []);
 
-  function saveLang(code) {
+  async function saveLang(code) {
     setNativeLang(code);
     setShowSetup(false);
-    SecureStore.setItemAsync(LANG_KEY, code);
+    try {
+      await SecureStore.setItemAsync(LANG_KEY, code);
+    } catch (e) {
+      console.warn('[VoiceOrb] failed to save native language:', e?.message || e);
+    }
   }
 
   useEffect(() => {
@@ -140,7 +144,8 @@ export default function VoiceOrb({ isDark }) {
   }
 
   async function startRecording() {
-    const lang = await SecureStore.getItemAsync(LANG_KEY);
+    const stored = await SecureStore.getItemAsync(LANG_KEY);
+    const lang = stored || nativeLang;
     if (!lang) {
       Alert.alert('Language needed', 'Select your native language in the menu.');
       return;

@@ -60,6 +60,7 @@ const AppHome = ({ isDark, onToggleTheme }) => {
 
   const openMenu = () => {
     setMenuOpen(true);
+    SecureStore.getItemAsync(LANG_KEY).then((v) => { if (v) setNativeLang(v); });
     Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start();
   };
 
