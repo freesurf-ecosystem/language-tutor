@@ -358,3 +358,4 @@ App.js
 4. 🔄 Dark mode
 5. 🔄 Offline support
 
+
