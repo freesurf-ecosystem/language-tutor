@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, ScrollView, StyleSheet, Text, TouchableOpacity,
-  ActivityIndicator, SectionList, TextInput,
+  ActivityIndicator, TextInput,
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { ChevronLeft, FileText, Plus, Mic, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, ChevronDown, ChevronRight, FileText, Plus, Mic, Trash2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NoteCard from '../components/NoteCard';
 import { subscribeNotes } from '../utils/notesBus';
@@ -23,7 +23,7 @@ export default function NotesScreen() {
   const theme = useTheme();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [collapsed, setCollapsed] = useState(new Set());
   const [editor, setEditor] = useState(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -93,33 +93,21 @@ export default function NotesScreen() {
     ]);
   }
 
-  const topics = [...new Set(notes.map(n => n.topic).filter(Boolean))];
+  function toggleSection(title) {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  }
 
-  const filtered = selectedTopic
-    ? notes.filter(n => n.topic === selectedTopic)
-    : notes;
-
-  const grouped = topics.length > 0
-    ? topics.map(t => ({ title: t, data: filtered.filter(n => n.topic === t) })).filter(g => g.data.length > 0)
-    : [{ title: 'Notes', data: filtered }];
+  const sections = [
+    { title: 'Notes', data: notes.filter(n => !n.topic) },
+    { title: 'Transcripts', data: notes.filter(n => n.topic === 'Transcripts') },
+  ].filter(s => s.data.length > 0);
 
   const c = theme.colors;
-
-  const renderItem = ({ item }) => (
-    <NoteCard
-      note={item}
-      onPress={() => handleNotePress(item)}
-      onLongPress={() => handleNoteLongPress(item)}
-      selected={selectedIds.has(item.id)}
-      selectMode={selectMode}
-    />
-  );
-
-  const renderSectionHeader = ({ section: { title } }) => (
-    <View style={[st.sectionHeader, { backgroundColor: c.background }]}>
-      <Text style={[st.sectionTitle, { color: c.onSurfaceVariant }]}>{title}</Text>
-    </View>
-  );
 
   if (editor) {
     console.log('[Notes] rendering editor for note:', editor.id);
@@ -151,19 +139,6 @@ export default function NotesScreen() {
 
   return (
     <View style={[st.container, { backgroundColor: c.background }]}>
-      {topics.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[st.topicScroll, { backgroundColor: c.surface, borderBottomColor: c.outline }]} contentContainerStyle={st.topicContent}>
-          <TouchableOpacity style={[st.topicTag, { backgroundColor: selectedTopic === null ? c.primary : c.surfaceVariant, borderColor: c.outline }]} onPress={() => setSelectedTopic(null)}>
-            <Text style={[st.topicTagText, { color: selectedTopic === null ? c.onPrimary : c.onSurfaceVariant }]}>All</Text>
-          </TouchableOpacity>
-          {topics.map(t => (
-            <TouchableOpacity key={t} style={[st.topicTag, { backgroundColor: selectedTopic === t ? c.primary : c.surfaceVariant, borderColor: c.outline }]} onPress={() => setSelectedTopic(selectedTopic === t ? null : t)}>
-              <Text style={[st.topicTagText, { color: selectedTopic === t ? c.onPrimary : c.onSurfaceVariant }]}>{t}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-
       {loading ? (
         <ActivityIndicator size="large" color={c.primary} style={st.loader} />
       ) : notes.length === 0 ? (
@@ -179,13 +154,29 @@ export default function NotesScreen() {
           </View>
         </View>
       ) : (
-        <SectionList
-          sections={grouped}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          renderSectionHeader={renderSectionHeader}
-          contentContainerStyle={st.notesList}
-        />
+        <ScrollView contentContainerStyle={st.notesList}>
+          {sections.map(section => {
+            const isCollapsed = collapsed.has(section.title);
+            return (
+              <View key={section.title}>
+                <TouchableOpacity onPress={() => toggleSection(section.title)} style={[st.sectionHeader, { backgroundColor: c.background }]}>
+                  <Text style={[st.sectionTitle, { color: c.onSurfaceVariant }]}>{section.title}</Text>
+                  {isCollapsed ? <ChevronRight size={16} color={c.onSurfaceVariant} /> : <ChevronDown size={16} color={c.onSurfaceVariant} />}
+                </TouchableOpacity>
+                {!isCollapsed && section.data.map(item => (
+                  <NoteCard
+                    key={item.id}
+                    note={item}
+                    onPress={() => handleNotePress(item)}
+                    onLongPress={() => handleNoteLongPress(item)}
+                    selected={selectedIds.has(item.id)}
+                    selectMode={selectMode}
+                  />
+                ))}
+              </View>
+            );
+          })}
+        </ScrollView>
       )}
 
       {selectMode && (
@@ -287,7 +278,7 @@ const st = StyleSheet.create({
   topicTag: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, marginRight: 6 },
   topicTagText: { fontSize: 13, fontWeight: '500' },
   loader: { marginTop: 60 },
-  sectionHeader: { paddingHorizontal: 14, paddingVertical: 8 },
+  sectionHeader: { paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase' },
   emptyState: { flex: 1, alignItems: 'center', paddingHorizontal: 32, paddingTop: 100 },
   emptyPrompt: { fontSize: 16, fontWeight: '500', flexShrink: 1 },
