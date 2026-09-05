@@ -11,6 +11,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 const TERMS_URL = 'https://freesurf.tools/terms';
 const PRIVACY_URL = 'https://freesurf.tools/privacy';
+const AI_URL = 'https://freesurf.tools/ai-processing';
 const DIGEST_URL = 'https://feedfree.tech';
 
 const brand = '#5b8cff';
@@ -150,7 +151,7 @@ export default function Onboarding({ onAuthenticated }) {
             <TouchableOpacity onPress={() => setAgree(!agree)} style={s.checkRow}>
               <Text style={{ color: brand, fontWeight: '700', fontSize: 18, lineHeight: 20 }}>{agree ? '☑' : '☐'}</Text>
               <Text style={{ color: text, fontSize: 14, flex: 1 }}>
-                I agree to the <LinkText url={TERMS_URL} label="Terms" /> and <LinkText url={PRIVACY_URL} label="Privacy Policy" />
+                I agree to the <LinkText url={TERMS_URL} label="Terms" />, <LinkText url={PRIVACY_URL} label="Privacy Policy" />, and <LinkText url={AI_URL} label="AI Processing" />
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setDigest(!digest)} style={s.checkRow}>
