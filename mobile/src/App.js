@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import { Platform, AppState } from 'react-native';
+import { ActivityIndicator, Platform, AppState, View } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
+import Onboarding from './screens/Onboarding';
+import { supabase } from './lib/supabase';
 
 const darkTheme = {
   ...MD3DarkTheme,
@@ -16,6 +18,12 @@ const lightTheme = {
 
 export default function App() {
   const [isDark, setIsDark] = useState(true);
+  const [session, setSession] = useState(null); // null = loading, true/false = authed
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(Boolean(data.session))).catch(() => setSession(false));
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => setSession(Boolean(s)));
+    return () => listener?.subscription?.unsubscribe();
+  }, []);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
 
@@ -48,7 +56,15 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={isDark ? darkTheme : lightTheme}>
-        <AppNavigator isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+        {session === null ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+            <ActivityIndicator color="#5b8cff" />
+          </View>
+        ) : !session ? (
+          <Onboarding onAuthenticated={() => setSession(true)} />
+        ) : (
+          <AppNavigator isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+        )}
       </PaperProvider>
     </SafeAreaProvider>
   );

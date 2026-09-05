@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "English Tutor",
-    "slug": "emmaline",
+    "name": "FreeSurf English Tutor",
+    "slug": "freesurf-tutor",
+    "scheme": "freesurf-tutor",
     "owner": "freesurf",
     "version": "0.3.2",
     "icon": "./assets/icon.png",
@@ -19,7 +20,7 @@
       "bundleIdentifier": "tools.freesurf.tutor",
       "supportsTablet": true,
       "infoPlist": {
-        "CFBundleDisplayName": "English Tutor",
+        "CFBundleDisplayName": "FreeSurf English Tutor",
         "NSMicrophoneUsageDescription": "FreeSurf English Tutor uses your microphone to record your speaking practice so the AI tutor can listen, correct your grammar and pronunciation, and respond. Audio is processed to generate the response and is not stored.",
         "NSUserTrackingUsageDescription": "Your device identifier is used to serve personalized ads and keep FreeSurf free.",
         "ITSAppUsesNonExemptEncryption": false

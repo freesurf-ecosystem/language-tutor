@@ -139,7 +139,7 @@ module.exports = () => {
   const config = {
     ...baseConfig,
     name: getAppDisplayName(baseConfig.name || 'oov', appVariant),
-    scheme: baseConfig.scheme || 'oov',
+    scheme: baseConfig.scheme || 'freesurf-tutor',
     plugins: filteredPlugins,
     ios: {
       ...(baseConfig.ios || {}),
