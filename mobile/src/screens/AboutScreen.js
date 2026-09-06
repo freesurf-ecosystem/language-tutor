@@ -40,8 +40,8 @@ export default function AboutScreen({ onBack }) {
         ))}
 
         <View style={{ marginTop: 24, gap: 12 }}>
-          <Button mode="outlined" onPress={() => Linking.openURL('https://Free Surf.tools')}>
-            Visit Free Surf.tools
+          <Button mode="outlined" onPress={() => Linking.openURL('https://freesurf.tools')}>
+            Visit freesurf.tools
           </Button>
           <Button mode="outlined" onPress={() => Linking.openURL('https://github.com/Free Surf-ecosystem')}>
             View on GitHub
