@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const anon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Public (publishable) Supabase credentials — safe to embed; not secrets.
+const SUPABASE_URL = 'https://jstojewashwoswsskwjk.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-nyuPas2pnqOcHMNJUCHog_xUlJbtuU';
 
 const storage = {
   getItem: (key) => SecureStore.getItemAsync(key),
@@ -10,7 +11,7 @@ const storage = {
   removeItem: (key) => SecureStore.deleteItemAsync(key),
 };
 
-export const supabase = createClient(url, anon, {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage,
     autoRefreshToken: true,
