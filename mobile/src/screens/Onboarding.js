@@ -9,9 +9,9 @@ import { supabase } from '../lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const TERMS_URL = 'https://freesurf.tools/terms';
-const PRIVACY_URL = 'https://freesurf.tools/privacy';
-const AI_URL = 'https://freesurf.tools/ai-processing';
+const TERMS_URL = 'https://Free Surf.tools/terms';
+const PRIVACY_URL = 'https://Free Surf.tools/privacy';
+const AI_URL = 'https://Free Surf.tools/ai-processing';
 const DIGEST_URL = 'https://feedfree.tech';
 
 const brand = '#5b8cff';
@@ -120,7 +120,7 @@ export default function Onboarding({ onAuthenticated }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#000' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: 28, paddingTop: 90, gap: 12 }} keyboardShouldPersistTaps="handled">
-        <Text style={s.brand}>FreeSurf</Text>
+        <Text style={s.brand}>Free Surf</Text>
         <Text style={s.title}>Create account</Text>
         <Text style={{ color: muted, marginBottom: 8 }}>Create a free account to get started.</Text>
 
