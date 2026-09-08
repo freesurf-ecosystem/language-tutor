@@ -1,4 +1,4 @@
-﻿name: Build Android
+name: Build Android
 
 # Production Android build: release-signed AAB (Google Play) + release-signed
 # APK (sideload). If the ANDROID_KEYSTORE_* secrets are absent, it falls back to
@@ -8,7 +8,7 @@ on:
   push:
     branches: [main, master]
     paths:
-      - "mobile/**"
+      - "mobile-legacy/**"
       - ".github/workflows/build-android.yml"
   workflow_dispatch:
 
@@ -38,23 +38,23 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        working-directory: mobile
+        working-directory: mobile-legacy
         run: npm install
 
       - name: Prebuild Android
-        working-directory: mobile
+        working-directory: mobile-legacy
         run: npx expo prebuild --platform android --no-install
 
       - name: Configure Gradle memory
-        working-directory: mobile/android
+        working-directory: mobile-legacy/android
         run: printf '\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m\n' >> gradle.properties
 
       - name: Ensure debug keystore
-        working-directory: mobile/android
+        working-directory: mobile-legacy/android
         run: test -f app/debug.keystore || keytool -genkeypair -v -keystore app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,OU=Android,O=Android,L=Android,ST=Android,C=US"
 
       - name: Setup Android signing
-        working-directory: mobile/android
+        working-directory: mobile-legacy/android
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -94,17 +94,17 @@ jobs:
           EOF
 
       - name: Build AAB + APK
-        working-directory: mobile/android
+        working-directory: mobile-legacy/android
         run: bash ./gradlew bundleRelease assembleRelease
 
       - name: Upload AAB (Google Play)
         uses: actions/upload-artifact@v4
         with:
           name: android-aab
-          path: mobile/android/app/build/outputs/bundle/release/*.aab
+          path: mobile-legacy/android/app/build/outputs/bundle/release/*.aab
 
       - name: Upload APK (sideload)
         uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: mobile/android/app/build/outputs/apk/release/*.apk
+          path: mobile-legacy/android/app/build/outputs/apk/release/*.apk
