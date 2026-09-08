@@ -1,5 +1,12 @@
 # Read-Along English Tutor — Concept & Story Sources
 
+> **Scope update (latest):** focus on *input + practice* that builds fluency — **not** gamification.
+> We are **dropping flashcards and quizzes** (they don't drive real fluency). Instead:
+> - A basic **alphabet / pronunciation guide** to get started.
+> - A curated library of **leveled read-along stories** + **speaking practice** with the tutor.
+> - A **notes / takeaways dashboard** where, after each read-along session, the learner (or tutor)
+>   captures what they learned — each session leaves a small artifact to revisit.
+
 > A possible repositioning of `tools.freesurf.tutor` as a **Read-Along English Tutor**: a library of
 > leveled stories that a tutor reads aloud with the learner, word/sentence highlighted, then discusses —
 > *"what do you think this means?"* — listening and gently correcting.
