@@ -16,7 +16,7 @@ const normalizeSupabaseUrl = (value) => {
 };
 
 const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SECRET_KEY;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
 
 const getSupabaseHost = () => {
@@ -67,7 +67,7 @@ if (supabaseUrl && supabaseAnonKey) {
 
 export const getSupabaseClient = () => {
   if (!supabase) {
-    throw new Error('Supabase client not initialized. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    throw new Error('Supabase client not initialized. Missing SUPABASE_URL or SUPABASE_SECRET_KEY');
   }
   return supabase;
 };

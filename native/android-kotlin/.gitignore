@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+local.properties
+
+# Android
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local secrets
+*.env
+.env.*
+keystore.properties
+*.jks
+*.keystore
+
+# Logs
+*.log

@@ -1,0 +1,26 @@
+// Native languages offered to the learner (BCP-47 code -> display label).
+// Same list the prior app used; kept for continuity of the redesign.
+export const NATIVE_LANGUAGES: Record<string, string> = {
+  ar: "العربية",
+  da: "Dansk",
+  de: "Deutsch",
+  el: "Ελληνικά",
+  es: "Español",
+  fi: "Suomi",
+  fr: "Français",
+  he: "עברית",
+  hi: "हिन्दी",
+  it: "Italiano",
+  ja: "日本語",
+  ko: "한국어",
+  ms: "Bahasa Melayu",
+  nl: "Nederlands",
+  no: "Norsk",
+  pl: "Polski",
+  pt: "Português",
+  ru: "Русский",
+  sv: "Svenska",
+  sw: "Kiswahili",
+  tr: "Türkçe",
+  zh: "中文",
+};

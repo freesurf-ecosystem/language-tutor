@@ -4,6 +4,11 @@ compatibility_date = "2024-12-01"
 
 [vars]
 ENVIRONMENT = "production"
+# Optional model/voice overrides (defaults live in src/index.ts):
+TOGETHER_ASR_MODEL = "openai/whisper-large-v3"
+TOGETHER_LLM_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+TOGETHER_TTS_MODEL = "canopylabs/orpheus-3b-0.1-ft"
 
 # Secrets to set via `wrangler secret put`:
-#   POD_URL   — the consolidated AI pod URL (e.g. https://<pod-id>-8000.proxy.runpod.net)
+#   TOGETHER_API_KEY      — Together AI API key (required)
+#   TOGETHER_TTS_VOICE    — single TTS voice id used across all languages (e.g. the Orpheus/Cartesia voice)
