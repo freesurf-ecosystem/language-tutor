@@ -21,12 +21,17 @@ import { Config } from "./src/config";
 type Turn = { role: "user" | "tutor"; text: string; lang?: string };
 type Phase = "idle" | "recording" | "thinking" | "speaking";
 
+const SAMPLE_PASSAGE =
+  "The little girl planted a seed in the garden. Every day she gave it water, and after many weeks a beautiful flower grew.";
+
 export default function App() {
   const [lang, setLang] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [history, setHistory] = useState<Turn[]>([]);
+  const [passage, setPassage] = useState(SAMPLE_PASSAGE);
+  const [speed, setSpeed] = useState(0.85);
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const player = useAudioPlayer(null);
@@ -74,7 +79,7 @@ export default function App() {
 
   async function sendToTutor(audio_base64: string, audio_format: string) {
     const url = `${Config.workerUrl}/api/tutor`;
-    console.log("[tutor] POST", url, { mode: "voice", audio_format, native_language: lang });
+    console.log("[tutor] POST", url, { mode: "voice", audio_format, native_language: lang, speed, passageLen: passage.length });
     let res: Response;
     try {
       res = await fetch(url, {
@@ -85,6 +90,8 @@ export default function App() {
           audio_base64,
           audio_format,
           native_language: lang,
+          speed,
+          passage,
           history: history.map((h) => ({ role: h.role, text: h.text })),
         }),
       });
@@ -148,6 +155,38 @@ export default function App() {
     }
   }
 
+  async function readPassage() {
+    setError("");
+    setPhase("thinking");
+    setStatus("Reading…");
+    const url = `${Config.workerUrl}/api/tutor`;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "read", text: passage, speed, native_language: lang }),
+      });
+      const raw = await res.text();
+      let data: any = null;
+      if (raw.trim()) {
+        try { data = JSON.parse(raw); } catch {}
+      }
+      if (!res.ok || !data || data.error) {
+        setError(data?.error || `Read failed (HTTP ${res.status})`);
+        setPhase("idle");
+        setStatus("");
+        return;
+      }
+      setHistory((h) => [...h, { role: "tutor", text: "What do you think this means?" }]);
+      if (data.audio_base64) await playAudio(data.audio_base64 as string);
+      else { setPhase("idle"); setStatus(""); }
+    } catch (e) {
+      setError(msg(e));
+      setPhase("idle");
+      setStatus("");
+    }
+  }
+
   // When the player finishes, return to idle.
   useEffect(() => {
     if (phase !== "speaking") return;
@@ -178,6 +217,33 @@ export default function App() {
         <Text style={styles.brand}>FREESURF</Text>
         <Text style={styles.title}>English Tutor</Text>
         <Text style={styles.sub}>Native language: {nativeName}</Text>
+      </View>
+
+      <View style={styles.passageCard}>
+        <Text style={styles.passageLabel}>READ ALONG</Text>
+        <Text style={styles.passageText}>{passage}</Text>
+        <View style={styles.passageControls}>
+          <Pressable
+            style={styles.readBtn}
+            onPress={readPassage}
+            disabled={phase !== "idle"}
+          >
+            <Text style={styles.readBtnText}>🔊 Read aloud</Text>
+          </Pressable>
+          <View style={styles.speedGroup}>
+            {[0.7, 0.85, 1.0].map((s) => (
+              <Pressable
+                key={s}
+                style={[styles.speedBtn, speed === s && styles.speedBtnActive]}
+                onPress={() => setSpeed(s)}
+              >
+                <Text style={[styles.speedText, speed === s && styles.speedTextActive]}>
+                  {s === 1.0 ? "1×" : `${s}×`}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
       </View>
 
       <ScrollView style={styles.history} contentContainerStyle={styles.historyInner}>
@@ -251,6 +317,17 @@ const styles = StyleSheet.create({
   brand: { fontSize: 11, letterSpacing: 2, fontWeight: "700", color: ACCENT },
   title: { fontSize: 30, fontWeight: "800", color: INK, marginTop: 2 },
   sub: { fontSize: 14, color: SECONDARY, marginTop: 6 },
+  passageCard: { marginHorizontal: 20, marginBottom: 12, backgroundColor: "#F3E4DA", borderRadius: 16, padding: 16 },
+  passageLabel: { fontSize: 11, fontWeight: "700", color: ACCENT, letterSpacing: 1.5, marginBottom: 6 },
+  passageText: { fontSize: 18, color: INK, lineHeight: 26, fontWeight: "500" },
+  passageControls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  readBtn: { backgroundColor: ACCENT, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  readBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  speedGroup: { flexDirection: "row", gap: 6 },
+  speedBtn: { borderWidth: 1, borderColor: ACCENT, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4 },
+  speedBtnActive: { backgroundColor: ACCENT },
+  speedText: { color: ACCENT, fontSize: 13, fontWeight: "600" },
+  speedTextActive: { color: "#fff" },
   history: { flex: 1, paddingHorizontal: 20 },
   historyInner: { paddingVertical: 8 },
   hint: { fontSize: 15, color: SECONDARY, textAlign: "center", marginTop: 40, paddingHorizontal: 12 },

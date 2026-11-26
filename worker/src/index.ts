@@ -33,18 +33,23 @@ const CHAT_URL = "https://api.together.xyz/v1/chat/completions";
 const AUDIO_BASE = "https://api.together.ai/v1/audio";
 
 const DEFAULT_ASR = "openai/whisper-large-v3";
-const DEFAULT_LLM = "zai-org/glm-5.3-flash";
-const DEFAULT_TTS = "canopylabs/orpheus-3b-0.1-ft"; // cross-lingual same-voice candidate; Cartesia = cartesia/sonic
+const DEFAULT_LLM = "MiniMaxAI/MiniMax-M3.1-Flash";
+const DEFAULT_TTS = "Qwen/Qwen3-TTS-12Hz-1.7B"; // cross-lingual same-voice (ono_anna)
 
-// Default single voice per model when TOGETHER_TTS_VOICE isn't set. These models infer language from the
-// input text, so ONE voice id is all that's needed to keep the same tutor voice across languages.
+// Default single voice per model when TOGETHER_TTS_VOICE isn't set. Qwen3-TTS keeps the same voice across
+// its supported languages, so ONE voice id preserves the tutor's timbre everywhere.
 const DEFAULT_VOICE_BY_MODEL: Record<string, string> = {
+  "Qwen/Qwen3-TTS-12Hz-1.7B": "ono_anna",
   "canopylabs/orpheus-3b-0.1-ft": "tara",
   "cartesia/sonic": "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
 };
 function defaultVoiceFor(model: string): string {
   return DEFAULT_VOICE_BY_MODEL[model] || "";
 }
+
+// Qwen3-TTS natively supports these 10 languages. For other native languages we let the model infer
+// from the text (fall back to English) rather than pass an unsupported language tag.
+const QWEN_LANGS = new Set(["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"]);
 
 // Known native languages the tutor supports (used to clamp LLM `lang` output to sane values).
 const NATIVE_LANGS = new Set([
@@ -60,6 +65,8 @@ interface TutorRequest {
   text?: string;
   native_language?: string;
   history?: { role: string; text: string }[];
+  speed?: number; // TTS playback speed (0.5 – 4.0); default 1.0
+  passage?: string; // read-along: the story text the learner is discussing
 }
 interface TutorResult {
   mode: string;
@@ -131,22 +138,39 @@ async function togetherBrain(
   mode: "voice" | "text",
   original: string,
   nativeLang: string,
-  history: { role: string; text: string }[]
+  history: { role: string; text: string }[],
+  passage?: string
 ): Promise<{ correction: string; segments: Segment[] }> {
   const model = env.TOGETHER_LLM_MODEL || DEFAULT_LLM;
-  const system =
-    "You are a warm, patient English tutor who also speaks the learner's native language fluently. You are " +
-    "helping a native " +
-    (nativeLang && NATIVE_LANGS.has(nativeLang) ? `"${nativeLang}"` : "language") +
-    " speaker learn English, the way a real human tutor would. TEACH AND SPEAK MOSTLY ENGLISH and correct " +
-    "their English, but occasionally drop in ONE SHORT native-language clue to help them understand — never " +
-    "over-explain in the native language, because the learner is here to PRACTICE ENGLISH. " +
-    'Return STRICT JSON only (no markdown): {"correction": string, "segments": [{"text": string, "lang": string}]}. ' +
-    '"correction" is a short fix of what they said (empty string if natural). "segments" are what you SAY OUT ' +
-    "LOUD in order; most are English (lang=en), with at most one short native-language clue per reply (lang=" +
-    `"${nativeLang && NATIVE_LANGS.has(nativeLang) ? nativeLang : "en"}"). ` +
-    "RULES: short, natural, conversational sentences; no run-ons; NEVER include reasoning, meta-commentary, or " +
-    'phrases like "let me think" — just say the tutor line.';
+  const langLabel = nativeLang && NATIVE_LANGS.has(nativeLang) ? nativeLang : "en";
+
+  const system = passage
+    ? // READ-ALONG comprehension mode: judge whether the learner understood the passage's meaning.
+      "You are a warm, patient English tutor doing a READ-ALONG lesson. The learner (native \"" +
+      langLabel +
+      "\" speaker) has just read this passage and was asked \"what did you understand?\". You now " +
+      "hear their answer. Your job is to ASSESS COMPREHENSION, not just fix grammar: confirm what they " +
+      "understood correctly, gently fill in the main meaning they missed, and keep it encouraging. " +
+      "Speak mostly English; if they clearly struggled, add ONE short native-language clue in \"" +
+      langLabel +
+      "\" to help them. " +
+      'Return STRICT JSON only (no markdown): {"correction": string, "segments": [{"text": string, "lang": string}]}. ' +
+      '"correction" is a short written fix (empty if fine). "segments" are what you SAY OUT LOUD in order; ' +
+      'mostly lang="en", at most one short native-language clue (lang="' +
+      langLabel +
+      '"). RULES: short, natural, conversational; no reasoning or meta-commentary; never say "let me think".'
+    : "You are a warm, patient English tutor who also speaks the learner's native language fluently. You are " +
+      "helping a native \"" +
+      langLabel +
+      "\" speaker learn English, the way a real human tutor would. TEACH AND SPEAK MOSTLY ENGLISH and correct " +
+      "their English, but occasionally drop in ONE SHORT native-language clue to help them understand — never " +
+      "over-explain in the native language, because the learner is here to PRACTICE ENGLISH. " +
+      'Return STRICT JSON only (no markdown): {"correction": string, "segments": [{"text": string, "lang": string}]}. ' +
+      '"correction" is a short fix of what they said (empty string if natural). "segments" are what you SAY OUT ' +
+      "LOUD in order; most are English (lang=en), with at most one short native-language clue per reply (lang=" +
+      "\"" + langLabel + "\"). " +
+      "RULES: short, natural, conversational sentences; no run-ons; NEVER include reasoning, meta-commentary, or " +
+      'phrases like "let me think" — just say the tutor line.';
 
   const messages = [{ role: "system", content: system }];
   if (history && history.length) {
@@ -156,8 +180,11 @@ async function togetherBrain(
       if (role) messages.push({ role, content: h.text });
     }
   }
-  const userContent =
-    mode === "text" ? original : `The learner said: "${original}". Correct it and keep the conversation going.`;
+  const userContent = passage
+    ? `Passage: "${passage}"\n\nThe learner's answer to "what did you understand?": "${original}"`
+    : mode === "text"
+      ? original
+      : `The learner said: "${original}". Correct it and keep the conversation going.`;
   messages.push({ role: "user", content: userContent });
 
   const res = await fetch(CHAT_URL, {
@@ -190,7 +217,7 @@ async function togetherBrain(
     // Fallback if the model returns non-JSON: treat whole output as one English segment.
     parsed = { correction: "", segments: [{ text: content, lang: "en" }] };
   }
-  const segments = Array.isArray(parsed.segments) && parsed.segments.length ? parsed.segments : [{ text: raw, lang: "en" }];
+  const segments = Array.isArray(parsed.segments) && parsed.segments.length ? parsed.segments : [{ text: content, lang: "en" }];
   return { correction: parsed.correction || "", segments };
 }
 
@@ -230,22 +257,28 @@ function concatWavs(chunks: Uint8Array[], sampleRate: number): Uint8Array {
 
 async function togetherSpeechPerSegment(
   env: Env,
-  segment: Segment
+  segment: Segment,
+  speed: number
 ): Promise<{ bytes?: Uint8Array; error?: string }> {
   const model = env.TOGETHER_TTS_MODEL || DEFAULT_TTS;
   const sampleRate = 24000;
   try {
+    // Qwen3-TTS accepts an explicit `language` tag (only pass supported langs; otherwise let it infer).
+    const lang = QWEN_LANGS.has(segment.lang) ? segment.lang : undefined;
+    const body: Record<string, unknown> = {
+      model,
+      input: segment.text,
+      // Same single voice regardless of segment.lang; Qwen keeps the same timbre across languages.
+      voice: env.TOGETHER_TTS_VOICE || defaultVoiceFor(model),
+      response_format: "wav",
+      sample_rate: sampleRate,
+      speed,
+    };
+    if (lang) body.language = lang;
     const res = await fetch(`${AUDIO_BASE}/speech`, {
       method: "POST",
       headers: { Authorization: `Bearer ${env.TOGETHER_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        input: segment.text,
-        // Same single voice regardless of segment.lang; the model infers language from the text.
-        voice: env.TOGETHER_TTS_VOICE || defaultVoiceFor(model),
-        response_format: "wav",
-        sample_rate: sampleRate,
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const txt = await res.text();
@@ -259,18 +292,24 @@ async function togetherSpeechPerSegment(
 
 async function ttsSegments(
   env: Env,
-  segments: Segment[]
+  segments: Segment[],
+  speed: number
 ): Promise<{ audio_base64?: string; warnings: string[] }> {
   const chunks: Uint8Array[] = [];
   const warnings: string[] = [];
   const sampleRate = 24000;
   for (const seg of segments) {
-    const { bytes, error } = await togetherSpeechPerSegment(env, seg);
+    const { bytes, error } = await togetherSpeechPerSegment(env, seg, speed);
     if (bytes && bytes.byteLength > 0) chunks.push(bytes);
     else warnings.push(`Could not speak segment (${seg.lang}): ${error || "no audio"}`);
   }
   if (!chunks.length) return { warnings };
   return { audio_base64: base64FromBytes(concatWavs(chunks, sampleRate)), warnings };
+}
+
+function clampSpeed(s?: number): number {
+  if (typeof s !== "number" || !isFinite(s)) return 1.0;
+  return Math.min(4.0, Math.max(0.5, s));
 }
 
 function base64FromBytes(bytes: Uint8Array): string {
@@ -297,10 +336,25 @@ export default {
 
     try {
       const body = (await request.json()) as TutorRequest;
-      const mode = body.mode === "text" ? "text" : "voice";
+      const mode = body.mode === "text" ? "text" : body.mode === "read" ? "read" : "voice";
       const nativeLang = body.native_language || "";
       const history = Array.isArray(body.history) ? body.history : [];
-      console.log(`[tutor] request mode=${mode} lang=${nativeLang || "en"} audioLen=${body.audio_base64 ? body.audio_base64.length : 0}`);
+      const speed = clampSpeed(body.speed);
+      const passage = (body.passage || "").trim();
+      console.log(`[tutor] request mode=${mode} lang=${nativeLang || "en"} speed=${speed} audioLen=${body.audio_base64 ? body.audio_base64.length : 0} passageLen=${passage.length}`);
+
+      // ---- "read" mode: tutor reads a passage aloud (no ASR / brain, just TTS) ----
+      if (mode === "read") {
+        const text = (body.text || "").trim();
+        if (!text) return jsonResponse({ error: "No text provided" }, 400, headers);
+        const segments: Segment[] = [{ text, lang: "en" }];
+        const { audio_base64, warnings } = await ttsSegments(env, segments, speed);
+        return jsonResponse(
+          { mode, segments, audio_base64, tts_warning: warnings.length ? warnings.join(" | ") : null },
+          200,
+          headers
+        );
+      }
 
       // ---- original text ----
       let original = (body.text || "").trim();
@@ -314,13 +368,13 @@ export default {
       }
 
       // ---- brain: correction + language-tagged segments ----
-      const { correction, segments } = await togetherBrain(env, mode, original, nativeLang, history);
+      const { correction, segments } = await togetherBrain(env, mode, original, nativeLang, history, passage);
       console.log(`[tutor] brain ok: correction="${(correction || "").slice(0, 80)}" segments=${segments.length}`);
 
       // ---- TTS (voice mode only) ----
       const result: TutorResult = { mode, original, correction, segments };
       if (mode === "voice") {
-        const { audio_base64, warnings } = await ttsSegments(env, segments);
+        const { audio_base64, warnings } = await ttsSegments(env, segments, speed);
         result.audio_base64 = audio_base64;
         result.tts_warning = warnings.length ? warnings.join(" | ") : null;
         console.log(`[tutor] tts ok: audioLen=${audio_base64 ? audio_base64.length : 0} warnings=${warnings.length}`);
