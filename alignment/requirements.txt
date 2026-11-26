@@ -1,0 +1,4 @@
+faster-whisper
+# NOTE: faster-whisper 1.2.1 requires av<14, but av<14 has no Python 3.14 wheels.
+# Recommended runtime: Python 3.11 or 3.12 with `av<14`.
+# On Python 3.14, use the monkey-patch in align.py instead of pinning av.

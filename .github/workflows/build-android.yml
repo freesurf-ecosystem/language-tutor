@@ -8,7 +8,7 @@ on:
   push:
     branches: [main, master]
     paths:
-      - "mobile-legacy/**"
+      - "tutor-app/**"
       - ".github/workflows/build-android.yml"
   workflow_dispatch:
 
@@ -38,23 +38,23 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        working-directory: mobile-legacy
+        working-directory: tutor-app
         run: npm install
 
       - name: Prebuild Android
-        working-directory: mobile-legacy
+        working-directory: tutor-app
         run: npx expo prebuild --platform android --no-install
 
       - name: Configure Gradle memory
-        working-directory: mobile-legacy/android
+        working-directory: tutor-app/android
         run: printf '\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m\n' >> gradle.properties
 
       - name: Ensure debug keystore
-        working-directory: mobile-legacy/android
+        working-directory: tutor-app/android
         run: test -f app/debug.keystore || keytool -genkeypair -v -keystore app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,OU=Android,O=Android,L=Android,ST=Android,C=US"
 
       - name: Setup Android signing
-        working-directory: mobile-legacy/android
+        working-directory: tutor-app/android
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -94,17 +94,17 @@ jobs:
           EOF
 
       - name: Build AAB + APK
-        working-directory: mobile-legacy/android
+        working-directory: tutor-app/android
         run: bash ./gradlew bundleRelease assembleRelease
 
       - name: Upload AAB (Google Play)
         uses: actions/upload-artifact@v4
         with:
           name: android-aab
-          path: mobile-legacy/android/app/build/outputs/bundle/release/*.aab
+          path: tutor-app/android/app/build/outputs/bundle/release/*.aab
 
       - name: Upload APK (sideload)
         uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: mobile-legacy/android/app/build/outputs/apk/release/*.apk
+          path: tutor-app/android/app/build/outputs/apk/release/*.apk

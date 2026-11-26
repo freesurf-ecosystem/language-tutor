@@ -1,26 +1,16 @@
 // Native languages offered to the learner (BCP-47 code -> display label).
-// Same list the prior app used; kept for continuity of the redesign.
+// Limited to the languages Qwen3-TTS speaks natively (EN, ES, FR, DE, IT, PT, RU,
+// ZH, JA, KO) so the tutor's native-language clues always render in the same
+// voice. "en" is omitted since English is the target language. Expand this when we
+// move to a wider-coverage TTS (e.g. Chatterbox, 23+ languages).
 export const NATIVE_LANGUAGES: Record<string, string> = {
-  ar: "العربية",
-  da: "Dansk",
-  de: "Deutsch",
-  el: "Ελληνικά",
   es: "Español",
-  fi: "Suomi",
   fr: "Français",
-  he: "עברית",
-  hi: "हिन्दी",
+  de: "Deutsch",
   it: "Italiano",
-  ja: "日本語",
-  ko: "한국어",
-  ms: "Bahasa Melayu",
-  nl: "Nederlands",
-  no: "Norsk",
-  pl: "Polski",
   pt: "Português",
   ru: "Русский",
-  sv: "Svenska",
-  sw: "Kiswahili",
-  tr: "Türkçe",
   zh: "中文",
+  ja: "日本語",
+  ko: "한국어",
 };
