@@ -1,0 +1,10 @@
+{
+  "name": "fox-and-the-grapes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.9.96 preview",
+    "check": "npx --yes hyperframes@0.9.96 check",
+    "render": "npx --yes hyperframes@0.9.96 render"
+  }
+}

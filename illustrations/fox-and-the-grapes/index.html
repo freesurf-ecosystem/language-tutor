@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Patrick+Hand&display=block" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <script src="assets/sketch.js"></script>
+    <script src="assets/story.js"></script>
+    <script src="assets/fox.js"></script>
+    <style>
+      :root { --ink: #211b14; --paper: #fffbf5; --accent: #e56a4c; --soft: #8a7c6c; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); font-family: "Inter", sans-serif; color: var(--ink); }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); }
+      #head { position: absolute; top: 296px; left: 120px; width: 768px; text-align: center; }
+      #kicker { font-family: "Patrick Hand", cursive; font-size: 36px; color: var(--accent); }
+      #title { font-size: 54px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; }
+      #stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+      #txt { position: absolute; top: 1000px; left: 120px; width: 668px; height: 250px; }
+      .sent { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px 6px; opacity: 0; }
+      .w { font-size: 50px; font-weight: 700; line-height: 1.2; padding: 0 6px; border-radius: 10px; }
+      #cta { position: absolute; top: 1010px; left: 120px; width: 668px; text-align: center; font-size: 44px; font-weight: 700; color: var(--soft); opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="54" data-width="1080" data-height="1920">
+      <audio id="vo1" src="assets/fx1.wav" data-start="2" data-duration="6.057" data-track-index="1"></audio>
+      <audio id="vo2" src="assets/fx2.wav" data-start="9.057" data-duration="5.371" data-track-index="1"></audio>
+      <audio id="vo3" src="assets/fx3.wav" data-start="15.428" data-duration="8.343" data-track-index="1"></audio>
+      <audio id="vo4" src="assets/fx4.wav" data-start="24.771" data-duration="7.543" data-track-index="1"></audio>
+      <audio id="vo5" src="assets/fx5.wav" data-start="33.314" data-duration="8.8" data-track-index="1"></audio>
+      <audio id="vo6" src="assets/fx6.wav" data-start="43.114" data-duration="5.257" data-track-index="1"></audio>
+
+      <div id="head"><div id="kicker">Slow English · Aesop's Fables</div><div id="title">The Fox and the Grapes</div></div>
+      <svg id="stage" viewBox="0 0 1080 1920">
+        <defs>
+          <filter id="boil" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="1" result="n" />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="4" />
+          </filter>
+        </defs>
+        <g id="art" filter="url(#boil)">
+          <path d="M140 960 L 940 960" style="fill:none;stroke:#211b14;stroke-width:5;stroke-linecap:round" />
+          <g id="layers"></g>
+          <g id="q"></g>
+        </g>
+      </svg>
+      <div id="txt"></div>
+      <div id="cta">Tell us in the comments.</div>
+    </div>
+
+    <script>
+      const S = window.Sketch, ST = window.STORY;
+      const T0 = 2.0, GAP = 1.0;
+      const START = []; { let t = T0; ST.dur.forEach((d) => { START.push(+t.toFixed(3)); t += d + GAP; }); }
+      const END6 = START[5] + ST.dur[5], TOTAL = 54;
+      const tl = gsap.timeline({ paused: true });
+      for (let i = 0; i * 0.125 < TOTAL; i++) tl.set("#turb", { attr: { seed: (i % 4) + 1 } }, i * 0.125);
+
+      const norm = (s) => s.toLowerCase().replace(/[^a-z']/g, "");
+      const layers = document.getElementById("layers"), txt = document.getElementById("txt");
+
+      ST.sentences.forEach((sen, i) => {
+        const t0 = START[i];
+        // word lookup: w("again", 2) -> absolute start of the 2nd "again"
+        const w = (word, nth = 1) => {
+          let k = 0;
+          for (const x of sen.words) if (norm(x.t) === norm(word) && ++k === nth) return t0 + x.s;
+          throw new Error(`scene ${i + 1}: word "${word}" #${nth} not found`);
+        };
+        const L = S.g(layers, { id: "sc" + i });
+        gsap.set(L, { opacity: 0 });
+        window.SCENES.fox[i]({ tl, L, w, S, end: t0 + ST.dur[i] });
+        const show = i === 0 ? 1.4 : t0 - 0.45, hide = i < 5 ? START[i + 1] - 0.45 : END6 + 0.7;
+        tl.to(L, { opacity: 1, duration: 0.35 }, show);
+        tl.to(L, { opacity: 0, duration: 0.35 }, hide);
+
+        // read-along text with word highlight (app style)
+        const div = document.createElement("div"); div.className = "sent"; txt.appendChild(div);
+        sen.words.forEach((x) => {
+          const sp = document.createElement("span"); sp.className = "w"; sp.textContent = x.t; div.appendChild(sp);
+          tl.set(sp, { backgroundColor: "#e56a4c", color: "#ffffff" }, t0 + x.s);
+          tl.set(sp, { backgroundColor: "rgba(229,106,76,0)", color: "#211b14" }, t0 + x.e);
+        });
+        tl.fromTo(div, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, immediateRender: false }, show);
+        tl.to(div, { opacity: 0, duration: 0.3 }, hide);
+        tl.set("#kicker", { textContent: `Slow English · ${i + 1} / ${ST.sentences.length}` }, t0 - 0.3);
+      });
+
+      // closing question (stays in the drawn style)
+      const Q = document.getElementById("q");
+      const qf = S.fox(Q, "fq", 250, 960, 1.4);
+      gsap.set(qf.head, { rotation: -20, transformOrigin: "20% 90%" });
+      Q.insertAdjacentHTML("beforeend",
+        `<text x="640" y="640" style="font-family:'Patrick Hand',cursive;font-size:64px;text-anchor:middle;fill:#211b14">What does</text>` +
+        `<text x="640" y="740" style="font-family:'Patrick Hand',cursive;font-size:84px;text-anchor:middle;fill:#e56a4c">“sour grapes”</text>` +
+        `<text x="640" y="830" style="font-family:'Patrick Hand',cursive;font-size:64px;text-anchor:middle;fill:#211b14">mean?</text>`);
+      gsap.set(Q, { opacity: 0 });
+      const qt = END6 + 0.9;
+      tl.to(Q, { opacity: 1, duration: 0.4 }, qt);
+      tl.set("#kicker", { textContent: "Slow English · your turn" }, qt);
+      S.wag(tl, qf, qt + 0.6, 3);
+      S.look(tl, qf, qt + 1.6, -34, 0.4);
+      tl.to("#cta", { opacity: 1, duration: 0.4 }, qt + 0.8);
+      tl.to("#q text", { scale: 1.05, transformOrigin: "50% 50%", duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" }, qt + 1.2);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

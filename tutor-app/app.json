@@ -2,7 +2,7 @@
   "expo": {
     "name": "FreeSurf Slow English Tutor",
     "slug": "freesurf-english-tutor",
-    "version": "0.1.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -27,7 +27,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET"
       ],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 29
     },
     "web": {
       "favicon": "./assets/favicon.png"
